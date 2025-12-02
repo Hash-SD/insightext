@@ -1,0 +1,356 @@
+"""
+Monitoring service untuk aggregate metrics dan monitoring performa model.
+Menyediakan fungsi untuk metrics summary, latency distribution, drift detection, dll.
+"""
+
+import logging
+import random
+from typing import Dict, List, Any, Optional
+from database.db_manager import DatabaseManager
+
+
+class MonitoringService:
+    """
+    Service untuk monitoring performa model dan aggregate metrics.
+    """
+    
+    def __init__(self, db_manager: DatabaseManager):
+        """
+        Initialize monitoring service dengan dependency injection.
+        
+        Args:
+            db_manager: DatabaseManager instance untuk database operations
+        """
+        self.db_manager = db_manager
+        self.logger = logging.getLogger(__name__)
+    
+    def get_metrics_summary(self) -> Dict[str, Dict[str, Any]]:
+        """
+        Get aggregated metrics per model version.
+        
+        Returns:
+            Dictionary dengan structure:
+            {
+                'v1': {
+                    'prediction_count': int,
+                    'avg_confidence': float,
+                    'avg_latency': float,
+                    'min_latency': float,
+                    'max_latency': float
+                },
+                ...
+            }
+        """
+        try:
+            self.logger.info("Retrieving metrics summary")
+            metrics = self.db_manager.get_metrics_by_version()
+            
+            if not metrics:
+                self.logger.warning("No metrics found in database")
+                return {}
+            
+            self.logger.info(f"Retrieved metrics for {len(metrics)} model versions")
+            return metrics
+            
+        except Exception as e:
+            self.logger.error(f"Error retrieving metrics summary: {e}", exc_info=True)
+            return {}
+    
+    @staticmethod
+    def _cache_key_for_metrics() -> str:
+        """Generate cache key for metrics based on current time (5 minute TTL)"""
+        import time
+        return f"metrics_{int(time.time() / 300)}"
+    
+    def get_latency_distribution(
+        self, 
+        model_version: Optional[str] = None
+    ) -> List[float]:
+        """
+        Get latency distribution untuk histogram data.
+        
+        Args:
+            model_version: Specific model version, atau None untuk semua versions
+            
+        Returns:
+            List of latency values dalam seconds
+        """
+        try:
+            self.logger.info(
+                f"Retrieving latency distribution for model: "
+                f"{model_version if model_version else 'all'}"
+            )
+            
+            # Build query
+            if model_version:
+                query = """
+                    SELECT latency
+                    FROM predictions
+                    WHERE model_version = ?
+                    ORDER BY timestamp DESC
+                """
+                params = (model_version,)
+            else:
+                query = """
+                    SELECT latency
+                    FROM predictions
+                    ORDER BY timestamp DESC
+                """
+                params = ()
+            
+            results = self.db_manager.execute_query(query, params)
+            
+            # Extract latency values
+            latencies = [row['latency'] for row in results]
+            
+            self.logger.info(f"Retrieved {len(latencies)} latency values")
+            return latencies
+            
+        except Exception as e:
+            self.logger.error(
+                f"Error retrieving latency distribution: {e}",
+                exc_info=True
+            )
+            return []
+    
+    def calculate_drift_score(self) -> float:
+        """
+        Calculate data drift score (placeholder implementation).
+        
+        Real implementation would compare current data distribution
+        dengan training data distribution.
+        
+        Returns:
+            float: Drift score (0-1, higher = more drift)
+        """
+        try:
+            self.logger.info("Calculating drift score (placeholder)")
+            
+            # Placeholder: return random value between 0 and 0.5
+            # Real implementation would:
+            # 1. Get recent predictions
+            # 2. Calculate distribution statistics
+            # 3. Compare with baseline distribution
+            # 4. Calculate KL divergence or similar metric
+            
+            drift_score = random.uniform(0.0, 0.5)
+            
+            self.logger.info(f"Drift score calculated: {drift_score:.4f}")
+            return drift_score
+            
+        except Exception as e:
+            self.logger.error(f"Error calculating drift score: {e}", exc_info=True)
+            return 0.0
+    
+    def get_prediction_counts(self) -> Dict[str, int]:
+        """
+        Get prediction counts per model version.
+        
+        Returns:
+            Dictionary dengan structure:
+            {
+                'v1': 150,
+                'v2': 200,
+                ...
+            }
+        """
+        try:
+            self.logger.info("Retrieving prediction counts per version")
+            
+            query = """
+                SELECT model_version, COUNT(*) as count
+                FROM predictions
+                GROUP BY model_version
+                ORDER BY model_version
+            """
+            
+            results = self.db_manager.execute_query(query)
+            
+            # Convert to dictionary
+            counts = {row['model_version']: row['count'] for row in results}
+            
+            self.logger.info(
+                f"Retrieved prediction counts for {len(counts)} versions"
+            )
+            return counts
+            
+        except Exception as e:
+            self.logger.error(
+                f"Error retrieving prediction counts: {e}",
+                exc_info=True
+            )
+            return {}
+    
+    def get_confidence_distribution(
+        self,
+        model_version: Optional[str] = None
+    ) -> List[float]:
+        """
+        Get confidence score distribution.
+        
+        Args:
+            model_version: Specific model version, atau None untuk semua versions
+            
+        Returns:
+            List of confidence values (0-1)
+        """
+        try:
+            self.logger.info(
+                f"Retrieving confidence distribution for model: "
+                f"{model_version if model_version else 'all'}"
+            )
+            
+            # Build query
+            if model_version:
+                query = """
+                    SELECT confidence
+                    FROM predictions
+                    WHERE model_version = ?
+                    ORDER BY timestamp DESC
+                """
+                params = (model_version,)
+            else:
+                query = """
+                    SELECT confidence
+                    FROM predictions
+                    ORDER BY timestamp DESC
+                """
+                params = ()
+            
+            results = self.db_manager.execute_query(query, params)
+            
+            # Extract confidence values
+            confidences = [row['confidence'] for row in results]
+            
+            self.logger.info(f"Retrieved {len(confidences)} confidence values")
+            return confidences
+            
+        except Exception as e:
+            self.logger.error(
+                f"Error retrieving confidence distribution: {e}",
+                exc_info=True
+            )
+            return []
+    
+    def get_prediction_timeline(
+        self,
+        limit: int = 100
+    ) -> List[Dict[str, Any]]:
+        """
+        Get prediction timeline untuk time-series visualization.
+        
+        Args:
+            limit: Maximum number of records
+            
+        Returns:
+            List of dictionaries dengan timestamp, model_version, confidence
+        """
+        try:
+            self.logger.info(f"Retrieving prediction timeline (limit: {limit})")
+            
+            query = """
+                SELECT 
+                    timestamp,
+                    model_version,
+                    confidence,
+                    latency
+                FROM predictions
+                ORDER BY timestamp DESC
+                LIMIT ?
+            """
+            
+            results = self.db_manager.execute_query(query, (limit,))
+            
+            self.logger.info(f"Retrieved {len(results)} timeline records")
+            return results
+            
+        except Exception as e:
+            self.logger.error(
+                f"Error retrieving prediction timeline: {e}",
+                exc_info=True
+            )
+            return []
+    
+    def get_model_comparison(self) -> Dict[str, Any]:
+        """
+        Get comprehensive comparison of all model versions.
+        
+        Returns:
+            Dictionary dengan comparison metrics untuk semua models
+        """
+        try:
+            self.logger.info("Generating model comparison")
+            
+            metrics_summary = self.get_metrics_summary()
+            prediction_counts = self.get_prediction_counts()
+            
+            comparison = {}
+            
+            for version in metrics_summary.keys():
+                comparison[version] = {
+                    **metrics_summary[version],
+                    'total_predictions': prediction_counts.get(version, 0)
+                }
+            
+            self.logger.info(
+                f"Model comparison generated for {len(comparison)} versions"
+            )
+            return comparison
+            
+        except Exception as e:
+            self.logger.error(
+                f"Error generating model comparison: {e}",
+                exc_info=True
+            )
+            return {}
+    
+    def get_recent_activity(self, hours: int = 24) -> Dict[str, Any]:
+        """
+        Get recent activity statistics.
+        
+        Args:
+            hours: Number of hours to look back
+            
+        Returns:
+            Dictionary dengan recent activity statistics
+        """
+        try:
+            self.logger.info(f"Retrieving recent activity (last {hours} hours)")
+            
+            query = """
+                SELECT 
+                    COUNT(*) as total_predictions,
+                    AVG(confidence) as avg_confidence,
+                    AVG(latency) as avg_latency,
+                    COUNT(DISTINCT model_version) as models_used
+                FROM predictions
+                WHERE timestamp >= datetime('now', '-' || ? || ' hours')
+            """
+            
+            results = self.db_manager.execute_query(query, (hours,))
+            
+            if results:
+                activity = results[0]
+                self.logger.info(
+                    f"Recent activity: {activity['total_predictions']} predictions"
+                )
+                return dict(activity)
+            else:
+                return {
+                    'total_predictions': 0,
+                    'avg_confidence': 0.0,
+                    'avg_latency': 0.0,
+                    'models_used': 0
+                }
+            
+        except Exception as e:
+            self.logger.error(
+                f"Error retrieving recent activity: {e}",
+                exc_info=True
+            )
+            return {
+                'total_predictions': 0,
+                'avg_confidence': 0.0,
+                'avg_latency': 0.0,
+                'models_used': 0
+            }
