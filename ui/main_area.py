@@ -24,12 +24,24 @@ def render_text_input() -> str:
     Returns:
         str: Input text dari user
     """
-    # Example texts
-    examples = {
-        "Positif": "Produk ini sangat bagus, kualitasnya luar biasa dan pengirimannya cepat!",
-        "Negatif": "Sangat kecewa dengan pelayanan toko ini, barang rusak dan respon lambat.",
-        "Netral": "Barang sudah sampai sesuai pesanan. Terima kasih."
-    }
+    # Get selected model version to determine examples
+    model_version = st.session_state.get('selected_model_version', 'v1')
+    
+    # Example texts based on model version
+    if model_version == 'v1':
+        # Indonesian examples - dengan sentimen yang sangat jelas
+        examples = {
+            "Positif": "Luar biasa sekali! Produk ini benar-benar sangat bagus, kualitasnya sempurna, pelayanannya ramah, pengirimannya cepat. Sangat puas dan senang! Sangat merekomendasikan kepada semua orang. Terbaik!",
+            "Negatif": "Sangat mengecewakan! Produk jelek, rusak, pelayanan buruk, lambat sekali. Sangat tidak puas dan kecewa. Mengecewakan sekali. Tidak akan beli lagi. Sangat buruk!",
+            "Netral": "Paket sudah diterima. Sesuai dengan deskripsi produk. Pengiriman sesuai jadwal. Tidak ada masalah."
+        }
+    else:
+        # English examples (v2 IMDB) - dengan sentimen yang sangat jelas
+        examples = {
+            "Positive": "This movie is absolutely amazing! I loved every single moment. The plot is brilliant, acting is superb, visuals are stunning. Best movie ever! Highly recommend to everyone!",
+            "Negative": "Terrible movie! Worst film I've ever seen. The story is awful, acting is horrible, complete waste of time and money. Very disappointed and angry. Never watching again!",
+            "Neutral": "The movie was okay. Some parts were interesting. Nothing special overall. Average experience."
+        }
     
     st.markdown("### 📝 Input Teks")
     
@@ -38,21 +50,29 @@ def render_text_input() -> str:
     cols = st.columns(len(examples))
     for i, (label, text) in enumerate(examples.items()):
         with cols[i]:
-            if st.button(f"Contoh {label}", key=f"btn_ex_{i}", width="stretch"):
-                st.session_state['input_text'] = text
+            if st.button(f"Contoh {label}", key=f"btn_ex_{i}", use_container_width=True):
+                st.session_state['example_text'] = text
+                st.session_state['text_input_area'] = text
+    
+    # Get initial value
+    initial_value = st.session_state.get('example_text', st.session_state.get('text_input_area', ''))
     
     text = st.text_area(
         "Atau ketik teks Anda di sini:",
-        value=st.session_state.get('input_text', ''),
+        value=initial_value,
         height=150,
         max_chars=settings.MAX_INPUT_LENGTH,
         help=(
             f"Masukkan teks minimal {settings.MIN_INPUT_LENGTH} karakter "
             f"dan maksimal {settings.MAX_INPUT_LENGTH} karakter"
         ),
-        placeholder="Contoh: Produk ini sangat bagus dan berkualitas tinggi...",
+        placeholder="Contoh: Produk ini sangat bagus dan berkualitas tinggi..." if model_version == 'v1' else "Example: This product is great and high quality...",
         key='text_input_area'
     )
+    
+    # Clear example_text after it's been used
+    if 'example_text' in st.session_state:
+        del st.session_state['example_text']
     
     # Update session state
     st.session_state['input_text'] = text
@@ -80,9 +100,26 @@ def render_prediction_button() -> bool:
     text = st.session_state.get('input_text', '')
     is_valid = len(text) >= settings.MIN_INPUT_LENGTH
     
+    # Custom CSS untuk tombol biru
+    st.markdown("""
+        <style>
+        div.stButton > button {
+            background-color: #1E88E5;
+            color: white;
+        }
+        div.stButton > button:hover {
+            background-color: #1565C0;
+            color: white;
+        }
+        div.stButton > button:disabled {
+            background-color: #BDBDBD;
+            color: #757575;
+        }
+        </style>
+    """, unsafe_allow_html=True)
+    
     button_clicked = st.button(
         "🔮 Prediksi",
-        type="primary",
         disabled=not is_valid,
         use_container_width=True,
         help="Klik untuk melakukan prediksi" if is_valid else f"Masukkan minimal {settings.MIN_INPUT_LENGTH} karakter"
@@ -164,10 +201,6 @@ def render_results(prediction_result: Dict[str, Any]):
         """,
         unsafe_allow_html=True
     )
-    
-    # Confidence bar chart
-    st.caption("Detail Confidence Score:")
-    _render_confidence_chart(confidence, prediction)
     
     # Metadata in expander
     _render_metadata_expander(prediction_result)

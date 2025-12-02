@@ -184,26 +184,22 @@ def render_drift_score(drift_score: float):
         color = "red"
         delta_color = "inverse"
     
-    col1, col2 = st.columns([1, 2])
+    st.metric(
+        label="Drift Score",
+        value=f"{drift_score:.2%}",
+        delta=status,
+        delta_color=delta_color,
+        help="Skor drift menunjukkan seberapa banyak distribusi data saat ini berbeda dari data training"
+    )
     
-    with col1:
-        st.metric(
-            label="Drift Score",
-            value=f"{drift_score:.2%}",
-            delta=status,
-            delta_color=delta_color,
-            help="Skor drift menunjukkan seberapa banyak distribusi data saat ini berbeda dari data training"
-        )
+    st.markdown(f"**Status:** <span style='color: {color};'>{status}</span>", unsafe_allow_html=True)
+    st.markdown(
+        "Drift score mengukur perubahan distribusi data. "
+        "Skor tinggi menandakan model mungkin perlu di-retrain."
+    )
     
-    with col2:
-        st.markdown(f"**Status:** <span style='color: {color};'>{status}</span>", unsafe_allow_html=True)
-        st.markdown(
-            "Drift score mengukur perubahan distribusi data. "
-            "Skor tinggi menandakan model mungkin perlu di-retrain."
-        )
-        
-        # Progress bar untuk visual representation
-        st.progress(min(drift_score, 1.0))
+    # Progress bar untuk visual representation
+    st.progress(min(drift_score, 1.0))
 
 
 def render_promotion_buttons(current_version: str):
@@ -347,11 +343,10 @@ def render_monitoring_dashboard(monitoring_service):
             render_metrics_table(metrics_summary)
             
             st.markdown("---")
-            col_a, col_b = st.columns(2)
-            with col_a:
-                render_prediction_distribution(metrics_summary)
-            with col_b:
-                render_drift_score(drift_score)
+            render_prediction_distribution(metrics_summary)
+            
+            st.markdown("---")
+            render_drift_score(drift_score)
 
         with tab2:
             st.subheader("Analisis Latency")

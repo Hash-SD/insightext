@@ -49,10 +49,15 @@ def initialize_session_state():
         st.session_state.selected_model_version = settings.DEFAULT_MODEL_VERSION
         logger.debug(f"Initialized selected_model_version: {settings.DEFAULT_MODEL_VERSION}")
     
-    # User consent
+    # User consent (default True - otomatis simpan)
     if 'user_consent' not in st.session_state:
-        st.session_state.user_consent = False
-        logger.debug("Initialized user_consent: False")
+        st.session_state.user_consent = True
+        logger.debug("Initialized user_consent: True (auto-save enabled)")
+    
+    # Dont save data flag
+    if 'dont_save_data' not in st.session_state:
+        st.session_state.dont_save_data = False
+        logger.debug("Initialized dont_save_data: False")
     
     # Prediction history
     if 'prediction_history' not in st.session_state:
@@ -270,15 +275,12 @@ def main():
         log_error(logger, e)
         st.stop()
     
-    # Render sidebar
-    render_sidebar(retraining_service=retraining_service)
+    # Render sidebar and get selected page
+    selected_page = render_sidebar(retraining_service=retraining_service)
     
-    # Main content area with tabs
-    tab1, tab2 = st.tabs(["🔮 Prediksi", "📊 Monitoring"])
-    
-    # Tab 1: Prediksi
-    with tab1:
-        st.title(settings.APP_TITLE)
+    # Page: Prediksi
+    if selected_page == "🔮 Prediksi":
+        st.title("🔮 Prediksi")
         st.markdown("---")
         
         # Render main area (input)
@@ -375,8 +377,8 @@ def main():
             logger.error(f"Error loading prediction history: {e}")
             log_error(logger, e)
     
-    # Tab 2: Monitoring
-    with tab2:
+    # Page: Monitoring
+    elif selected_page == "📊 Monitoring":
         st.title("📊 Dashboard Monitoring")
         st.markdown("---")
         try:

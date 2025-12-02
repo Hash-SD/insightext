@@ -85,36 +85,38 @@ def render_consent_checkbox() -> bool:
     Render consent checkbox dengan tooltip explanation.
     
     Returns:
-        bool: User consent status (True jika user setuju)
+        bool: User consent status (True jika user setuju untuk simpan data)
     """
-    consent = st.checkbox(
-        "Izinkan simpan data untuk retraining?",
-        value=st.session_state.get('user_consent', False),
+    # Checkbox untuk OPT-OUT (jangan simpan)
+    dont_save = st.checkbox(
+        "🚫 Jangan simpan data saya",
+        value=st.session_state.get('dont_save_data', False),
         help=(
-            "Dengan mencentang ini, input teks dan hasil prediksi Anda akan "
-            "disimpan ke database untuk meningkatkan model di masa depan. "
-            "Data akan dianonimkan jika mengandung informasi pribadi."
+            "Centang ini jika Anda TIDAK ingin data disimpan. "
+            "Secara default, data akan tersimpan untuk meningkatkan model."
         ),
-        key='consent_checkbox'
+        key='dont_save_checkbox'
     )
     
-    # Update session state
+    # Update session state: consent = True jika TIDAK dicentang
+    consent = not dont_save
     st.session_state['user_consent'] = consent
+    st.session_state['dont_save_data'] = dont_save
     
     return consent
 
 
-def render_model_selector() -> str:
+def _render_model_selection_ui() -> str:
     """
-    Display model selector untuk memilih antara model Indonesian (v1) dan IMDB English (v2).
+    Display model selector UI.
     
     Returns:
         str: Model version ('v1' atau 'v2')
     """
     # Model options
     model_options = {
-        'v1': '🇮🇩 Indonesian (3 kelas)',
-        'v2': '🇺🇸 English IMDB (2 kelas)'
+        'v1': '🇮🇩 Indonesian (Default)',
+        'v2': '🇺🇸 English IMDB'
     }
     
     # Get current selection from session state
@@ -122,30 +124,20 @@ def render_model_selector() -> str:
     
     # Model selector
     selected = st.selectbox(
-        "Pilih Model:",
+        "Pilih Versi Model:",
         options=list(model_options.keys()),
         format_func=lambda x: model_options[x],
         index=list(model_options.keys()).index(current_version),
-        help="v1: Indonesian (negatif/netral/positif)\nv2: English IMDB (negative/positive)"
+        help="Pilih model yang sesuai dengan bahasa teks Anda."
     )
     
     st.session_state['selected_model_version'] = selected
-    
-    # Display model info based on selection
-    if selected == 'v1':
-        st.info("🤖 **Model: Naive Bayes Indonesian**\n\n`MultinomialNB + TF-IDF`\n\nBahasa Indonesia - 3 kelas")
-    else:
-        st.info("🤖 **Model: Naive Bayes IMDB**\n\n`MultinomialNB + TF-IDF`\n\nEnglish - 2 kelas (binary)")
-    
-    # Display model metadata
-    _display_model_metadata(selected)
-    
     return selected
 
 
-def _display_model_metadata(version: str):
+def _display_model_details(version: str):
     """
-    Display model metadata.
+    Display model details inside an expander.
     
     Args:
         version: Model version (e.g., 'v1')
@@ -153,14 +145,16 @@ def _display_model_metadata(version: str):
     metadata = MODEL_METADATA.get(version, {})
     
     if metadata:
-        st.markdown("**Detail Model:**")
-        
-        # Display labels
-        labels = metadata.get('labels', [])
-        st.markdown(f"**Output:** {', '.join(labels)}")
-        
-        # Description
-        st.markdown(f"_{metadata.get('description', '')}_")
+        with st.expander("🔬 Detail Model Aktif", expanded=False):
+            st.markdown(f"**🧠 {metadata.get('name', 'Unknown Model')}**")
+            st.caption(f"{metadata.get('model_type')} | {metadata.get('language')}")
+            
+            # Display labels
+            labels = metadata.get('labels', [])
+            st.markdown(f"**Output:** {', '.join(labels)}")
+            
+            # Description
+            st.markdown(f"_{metadata.get('description', '')}_")
 
 
 def render_retrain_button() -> bool:
@@ -170,12 +164,11 @@ def render_retrain_button() -> bool:
     Returns:
         bool: True jika user mengkonfirmasi retraining
     """
-    st.markdown("---")
-    st.markdown("### Retraining Pipeline")
+    st.markdown("### 🔄 Retraining Pipeline")
     
     # Button untuk trigger retraining
     if st.button(
-        "🔄 Latih Ulang Model",
+        "Latih Ulang Model",
         help="Trigger retraining pipeline dengan data terbaru",
         width="stretch",
         type="primary"
@@ -187,18 +180,14 @@ def render_retrain_button() -> bool:
     if st.session_state.get('show_retrain_confirmation', False):
         st.warning(
             "⚠️ **Konfirmasi Retraining**\n\n"
-            "Proses retraining akan:\n"
-            "- Mengambil snapshot dataset dari database\n"
-            "- Melatih model baru dengan data terbaru\n"
-            "- Menyimpan model baru ke MLflow registry\n\n"
-            "Proses ini mungkin memakan waktu beberapa menit.\n\n"
-            "Apakah Anda yakin ingin melanjutkan?"
+            "Proses ini akan melatih model baru dengan data terbaru.\n"
+            "Apakah Anda yakin?"
         )
         
         col1, col2 = st.columns(2)
         
         with col1:
-            if st.button("✅ Ya, Lanjutkan", width="stretch"):
+            if st.button("✅ Ya", width="stretch"):
                 st.session_state['show_retrain_confirmation'] = False
                 st.session_state['confirm_retrain'] = True
                 st.rerun()
@@ -219,58 +208,66 @@ def render_retrain_button() -> bool:
     return confirmed
 
 
-def render_sidebar(retraining_service=None):
+def render_sidebar(retraining_service=None) -> str:
     """
     Main function untuk render complete sidebar.
     
-    Orchestrates semua sidebar components:
-    - App title and description
-    - Consent checkbox
-    - Model selector
-    - Retraining button
+    Orchestrates semua sidebar components dengan layout baru.
     
-    Args:
-        retraining_service: RetrainingService instance untuk handle retraining
+    Returns:
+        str: Selected page ('Prediksi' or 'Monitoring')
     """
     with st.sidebar:
-        # App title
-        st.title(f"{settings.APP_ICON} {settings.APP_TITLE}")
-        
-        # 1. Panduan Singkat (Quick Guide)
-        with st.expander("📚 Panduan Singkat", expanded=True):
-            st.markdown("""
-            **Selamat datang!**
-            1. Pilih **Versi Model** yang ingin digunakan.
-            2. Masukkan teks di area utama.
-            3. Klik **Prediksi** untuk melihat hasil analisis sentimen.
-            4. Cek tab **Monitoring** untuk melihat performa model.
-            """)
-        
-        st.markdown("---")
-        
-        # 2. Pengaturan Model (Model Settings)
-        st.subheader("🤖 Pengaturan Model")
-        render_model_selector()
-        
-        st.markdown("---")
-        
-        # 3. Privasi & Data (Privacy & Data)
-        st.subheader("🔒 Privasi & Data")
-        render_consent_checkbox()
-        
-        # 4. Retraining (Advanced) - Dengan Autentikasi
-        if retraining_service:
-            st.markdown("---")
-            st.subheader("🛠️ Maintenance (Advanced)")
-            with st.expander("Menu Retraining", expanded=False):
-                _render_admin_section(retraining_service)
-        
-        # Footer
-        st.markdown("---")
+        # App title - diperbesar dengan HTML
         st.markdown(
-            "<small>MLOps Streamlit Text AI v1.0</small>",
+            f"<h1 style='text-align: left; font-size: 2.5rem; margin-bottom: 0;'>{settings.APP_ICON} {settings.APP_TITLE}</h1>",
             unsafe_allow_html=True
         )
+        
+        st.divider()
+        
+        # Navigation
+        st.header("🧭 Navigasi")
+        page = st.radio(
+            "Pilih Halaman:",
+            ["🔮 Prediksi", "📊 Monitoring"],
+            index=0,
+            label_visibility="collapsed"
+        )
+        
+        st.divider()
+        
+        # 1. Pengaturan Model (Fokus Utama)
+        st.header("⚙️ Pengaturan Model")
+        
+        # Model selector
+        selected_version = _render_model_selection_ui()
+        
+        # Divider halus
+        st.divider()
+        
+        # Detail Model (Hidden by default)
+        _display_model_details(selected_version)
+        
+        st.divider()
+        
+        # 2. Pengaturan Lain
+        st.subheader("🛠️ Pengaturan Lain")
+        render_consent_checkbox()
+        
+        st.divider()
+        
+        # 3. Akses Admin (Footer)
+        with st.expander("👤 Akses Admin"):
+            if retraining_service:
+                _render_admin_section(retraining_service)
+            else:
+                st.info("Service retraining tidak tersedia.")
+        
+        # Footer Version
+        st.caption("MLOps Streamlit Text AI v1.1 | © 2025")
+        
+    return page
 
 
 def _render_admin_section(retraining_service):
@@ -283,70 +280,47 @@ def _render_admin_section(retraining_service):
     # Check session timeout
     if _check_admin_session() and _check_session_timeout(timeout_minutes=30):
         _logout_admin()
-        st.warning("⏰ Session timeout. Silakan login kembali.")
+        st.warning("⏰ Session timeout.")
     
     # Check if admin is authenticated
     if not _check_admin_session():
-        st.warning("🔐 **Area Terbatas**\n\nMenu ini memerlukan autentikasi admin.")
-        
         # Login form
-        with st.form("admin_login_form", clear_on_submit=True):
-            st.markdown("**Login Admin**")
-            password = st.text_input(
-                "Password Admin", 
-                type="password",
-                placeholder="Masukkan password admin"
-            )
-            
-            col1, col2 = st.columns(2)
-            with col1:
-                submit = st.form_submit_button("🔑 Login", use_container_width=True)
-            
-            if submit:
-                if password:
-                    if _login_admin(password):
-                        st.success("✅ Login berhasil!")
-                        time.sleep(0.5)
-                        st.rerun()
-                    else:
-                        st.error("❌ Password salah!")
-                        # Rate limiting - add delay for failed attempts
-                        time.sleep(1)
-                else:
-                    st.error("❌ Masukkan password!")
-    else:
-        # Admin authenticated - show maintenance menu
-        st.success("✅ **Authenticated as Admin**")
+        password = st.text_input(
+            "Password Admin", 
+            type="password",
+            placeholder="Masukkan password",
+            key="admin_pass_input"
+        )
         
-        # Show session info
-        login_time = st.session_state.get('admin_login_time', 0)
-        if login_time:
-            elapsed = int((time.time() - login_time) / 60)
-            remaining = 30 - elapsed
-            st.caption(f"⏱️ Session tersisa: {remaining} menit")
+        if st.button("🔓 Masuk", use_container_width=True):
+            if password:
+                if _login_admin(password):
+                    st.success("Login berhasil!")
+                    time.sleep(0.5)
+                    st.rerun()
+                else:
+                    st.error("Password salah!")
+                    time.sleep(1)
+            else:
+                st.error("Masukkan password!")
+    else:
+        # Admin authenticated
+        st.success("✅ Admin Logged In")
         
         # Logout button
         if st.button("🚪 Logout", use_container_width=True):
             _logout_admin()
-            st.info("Berhasil logout.")
             st.rerun()
         
         st.markdown("---")
         
         # Retraining section
-        st.markdown("### 🔄 Retraining Pipeline")
-        st.info(
-            "**Perhatian:**\n"
-            "- Proses ini akan melatih ulang model dengan data terbaru\n"
-            "- Memerlukan data dengan user consent\n"
-            "- Proses mungkin memakan waktu beberapa menit"
-        )
-        
         retrain_confirmed = render_retrain_button()
         
         # Handle retraining if confirmed
         if retrain_confirmed:
             _handle_retraining(retraining_service)
+
 
 def _handle_retraining(retraining_service):
     """

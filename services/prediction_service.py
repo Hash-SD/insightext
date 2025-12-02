@@ -126,7 +126,8 @@ class PredictionService:
             metadata = self.model_loader.get_model_metadata(model_version)
             metadata['preprocessed_token_count'] = len(cleaned_text.split())
             
-            # Step 7: Log to database (if consent)
+            # Step 7: Log to database (SELALU simpan, kecuali user opt-out)
+            # user_consent default = True, kecuali user centang "Jangan simpan"
             if user_consent:
                 try:
                     success = self.log_prediction(
@@ -149,7 +150,8 @@ class PredictionService:
                     # Add warning to metadata
                     metadata['database_warning'] = "Gagal menyimpan ke database"
             else:
-                self.logger.info("User consent not given, skipping database logging")
+                self.logger.info("User opted out (dont_save=True), skipping database logging")
+                metadata['database_info'] = "Data tidak disimpan (pilihan user)"
             
             # Step 8: Return results
             result = {
