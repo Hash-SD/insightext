@@ -5,15 +5,21 @@ Module ini menyediakan fungsi untuk render monitoring dashboard dengan:
 - Metrics table per model version
 - Latency histogram
 - Drift score display
-- Model promotion buttons (placeholder)
+- Model management (upload, archive, rollback, comparison)
+- Archive viewer dengan restoration capability
 """
 
 import streamlit as st
 import plotly.graph_objects as go
 import plotly.express as px
 import pandas as pd
+import json
+from pathlib import Path
 from typing import Dict, List, Any, Optional
+from datetime import datetime
 from config.settings import settings
+from models.model_updater import ModelUpdater
+from models.model_archiver import ModelArchiver
 
 
 # Model metadata for Naive Bayes
@@ -204,49 +210,372 @@ def render_drift_score(drift_score: float):
 
 def render_promotion_buttons(current_version: str):
     """
-    Render buttons untuk model stage promotion (placeholder).
+    Render comprehensive model management interface.
+    Menggantikan placeholder buttons dengan fitur management yang sebenarnya.
     
     Args:
         current_version: Current selected model version
     """
-    st.markdown("### 🚀 Model Promotion")
+    st.markdown("### 🚀 Model Management Suite")
     
-    st.info(
-        "**Placeholder Feature**\n\n"
-        "Fitur ini akan memungkinkan promosi model antara stages:\n"
-        "- Staging → Production\n"
-        "- Production → Archived\n\n"
-        "Integrasi dengan MLflow Model Registry akan diimplementasikan di fase berikutnya."
-    )
+    # Initialize services
+    updater = ModelUpdater()
+    archiver = ModelArchiver()
     
-    col1, col2, col3 = st.columns(3)
+    # Create tabs for different model management features
+    mgmt_tab1, mgmt_tab2, mgmt_tab3, mgmt_tab4 = st.tabs([
+        "📤 Update Model",
+        "📦 Archive Management",
+        "⚖️ Model Comparison",
+        "📋 Update History"
+    ])
     
-    with col1:
-        if st.button(
-            "📤 Promote to Staging",
-            width="stretch",
-            disabled=True,
-            help="Promosikan model ke Staging (Coming Soon)"
-        ):
-            st.warning("Fitur ini akan segera tersedia")
+    # TAB 1: Update Model
+    with mgmt_tab1:
+        st.markdown("#### Perbarui Model dengan Versi Terbaru")
+        st.markdown("""
+        Fitur ini memungkinkan Anda untuk:
+        - Upload model baru (file .pkl)
+        - Automatic validation performa model
+        - Archive model lama sebelum deployment
+        - Rollback ke versi sebelumnya jika diperlukan
+        """)
+        
+        col1, col2 = st.columns([2, 1])
+        
+        with col1:
+            st.markdown("**Upload File Model Baru:**")
+            uploaded_model = st.file_uploader(
+                "Pilih file model (format: .pkl atau folder)",
+                type=['pkl'],
+                help="Upload model pipeline yang sudah di-train"
+            )
+            
+            if uploaded_model is not None:
+                st.success(f"✓ File diterima: {uploaded_model.name}")
+        
+        with col2:
+            st.markdown("**Upload File Preprocessor:**")
+            uploaded_preprocessor = st.file_uploader(
+                "Pilih file preprocessor",
+                type=['pkl'],
+                help="Upload preprocessor/vectorizer"
+            )
+            
+            if uploaded_preprocessor is not None:
+                st.success(f"✓ File diterima: {uploaded_preprocessor.name}")
+        
+        # Model metrics input
+        st.markdown("**Metrics Model Baru:**")
+        col1, col2, col3 = st.columns(3)
+        
+        with col1:
+            new_accuracy = st.number_input(
+                "Akurasi Model",
+                min_value=0.0,
+                max_value=1.0,
+                value=0.75,
+                step=0.01,
+                help="Akurasi model baru pada test set"
+            )
+        
+        with col2:
+            new_f1_score = st.number_input(
+                "F1 Score",
+                min_value=0.0,
+                max_value=1.0,
+                value=0.73,
+                step=0.01,
+                help="F1 Score model baru"
+            )
+        
+        with col3:
+            new_training_samples = st.number_input(
+                "Training Samples",
+                min_value=100,
+                value=1000,
+                step=100,
+                help="Jumlah samples yang digunakan untuk training"
+            )
+        
+        # Update reason
+        update_reason = st.text_area(
+            "Alasan Update Model:",
+            value="Trained with balanced data using oversampling technique",
+            help="Catatan tentang mengapa model di-update (e.g., improvement reason, data changes)"
+        )
+        
+        # Update button
+        if st.button("🚀 Update Model Sekarang", use_container_width=True, type="primary"):
+            if uploaded_model is not None:
+                with st.spinner("Memproses update model..."):
+                    try:
+                        # Create temporary directory untuk uploaded files
+                        temp_model_dir = Path('temp_model_upload')
+                        temp_model_dir.mkdir(exist_ok=True)
+                        
+                        # Save uploaded files
+                        model_path = temp_model_dir / uploaded_model.name
+                        with open(model_path, 'wb') as f:
+                            f.write(uploaded_model.getvalue())
+                        
+                        if uploaded_preprocessor is not None:
+                            preprocessor_path = temp_model_dir / uploaded_preprocessor.name
+                            with open(preprocessor_path, 'wb') as f:
+                                f.write(uploaded_preprocessor.getvalue())
+                        
+                        # Prepare metrics
+                        new_metrics = {
+                            'accuracy': new_accuracy,
+                            'f1_score': new_f1_score,
+                            'training_samples': new_training_samples,
+                            'uploaded_at': datetime.now().isoformat()
+                        }
+                        
+                        # Update model
+                        success, report = updater.update_model_v1(
+                            new_model_path=str(temp_model_dir),
+                            new_metrics=new_metrics,
+                            update_reason=update_reason,
+                            auto_validate=True
+                        )
+                        
+                        if success:
+                            st.success("✓ Model updated successfully!")
+                            st.json(report.get('summary', {}))
+                        else:
+                            st.error(f"❌ Update failed: {report.get('error', 'Unknown error')}")
+                            st.json(report)
+                    
+                    except Exception as e:
+                        st.error(f"❌ Error: {str(e)}")
+            else:
+                st.warning("⚠️ Silakan upload file model terlebih dahulu")
     
-    with col2:
-        if st.button(
-            "✅ Promote to Production",
-            width="stretch",
-            disabled=True,
-            help="Promosikan model ke Production (Coming Soon)"
-        ):
-            st.warning("Fitur ini akan segera tersedia")
+    # TAB 2: Archive Management
+    with mgmt_tab2:
+        st.markdown("#### Manajemen Archive Model")
+        st.markdown("""
+        Kelola versi model lama yang sudah di-archive:
+        - Lihat daftar model yang di-archive
+        - View metadata dan metrics dari setiap versi
+        - Restore model dari archive
+        - Delete archive yang tidak diperlukan
+        """)
+        
+        # Get archived models
+        archived_models = archiver.list_archived_models(version='v1')
+        
+        if archived_models:
+            st.markdown(f"**Total Archive: {len(archived_models)} versi**")
+            
+            # Display archives as expandable sections
+            for idx, archive_info in enumerate(archived_models):
+                with st.expander(
+                    f"📦 {archive_info['version']} - {archive_info['archived_at'][:10]}",
+                    expanded=(idx == 0)
+                ):
+                    # Display metadata
+                    col1, col2 = st.columns(2)
+                    
+                    with col1:
+                        st.markdown("**Metadata:**")
+                        st.text(f"Timestamp: {archive_info['archived_at']}")
+                        st.text(f"Notes: {archive_info.get('notes', 'N/A')}")
+                    
+                    with col2:
+                        st.markdown("**Metrics:**")
+                        metrics = archive_info.get('metrics', {})
+                        if metrics:
+                            st.json(metrics)
+                        else:
+                            st.info("Tidak ada metrics tersimpan")
+                    
+                    # Action buttons
+                    col1, col2, col3 = st.columns(3)
+                    
+                    with col1:
+                        if st.button(
+                            "🔄 Restore",
+                            key=f"restore_{idx}",
+                            help="Restore model ini ke production"
+                        ):
+                            if st.session_state.get('admin_authenticated', False):
+                                success, result = updater.rollback_to_archive(archive_info['path'])
+                                if success:
+                                    st.success("✓ Model restored successfully!")
+                                    st.json(result)
+                                else:
+                                    st.error("❌ Restore failed")
+                            else:
+                                st.warning("⚠️ Admin authentication required")
+                    
+                    with col2:
+                        if st.button(
+                            "👁️ View Details",
+                            key=f"view_{idx}",
+                            help="Lihat file-file dalam archive"
+                        ):
+                            files = archive_info.get('files', [])
+                            st.text(f"Files in archive: {', '.join(files)}")
+                    
+                    with col3:
+                        if st.button(
+                            "🗑️ Delete",
+                            key=f"delete_{idx}",
+                            help="Hapus archive ini secara permanen"
+                        ):
+                            if st.session_state.get('admin_authenticated', False):
+                                success = archiver.delete_archive(archive_info['path'])
+                                if success:
+                                    st.success("✓ Archive deleted")
+                                    st.rerun()
+                                else:
+                                    st.error("❌ Delete failed")
+                            else:
+                                st.warning("⚠️ Admin authentication required")
+        else:
+            st.info("📭 Belum ada model yang di-archive")
     
-    with col3:
-        if st.button(
-            "📦 Archive Model",
-            width="stretch",
-            disabled=True,
-            help="Arsipkan model (Coming Soon)"
-        ):
-            st.warning("Fitur ini akan segera tersedia")
+    # TAB 3: Model Comparison
+    with mgmt_tab3:
+        st.markdown("#### Bandingkan Model Versi Lama vs Baru")
+        st.markdown("""
+        Lihat perbandingan detail antara:
+        - Model production saat ini
+        - Model versi lama (di-archive)
+        """)
+        
+        # Get current model metrics
+        try:
+            current_config_path = Path('models/saved_model/training_config.json')
+            if current_config_path.exists():
+                with open(current_config_path, 'r') as f:
+                    current_config = json.load(f)
+                current_metrics = current_config.get('metrics', {})
+            else:
+                current_metrics = {}
+        except:
+            current_metrics = {}
+        
+        # Display current model
+        st.markdown("**Model Saat Ini (Production):**")
+        col1, col2, col3 = st.columns(3)
+        
+        with col1:
+            st.metric(
+                "Akurasi",
+                f"{current_metrics.get('accuracy', 0):.4f}",
+                help="Accuracy pada test set"
+            )
+        
+        with col2:
+            st.metric(
+                "F1 Score",
+                f"{current_metrics.get('f1_score', 0):.4f}",
+                help="F1 Score pada test set"
+            )
+        
+        with col3:
+            if isinstance(current_metrics.get('training_samples'), int):
+                st.metric(
+                    "Training Samples",
+                    f"{current_metrics.get('training_samples', 0):,}",
+                    help="Jumlah samples training"
+                )
+        
+        st.divider()
+        
+        # Compare with archived versions
+        archived_models = archiver.list_archived_models(version='v1')
+        
+        if archived_models:
+            selected_archive = st.selectbox(
+                "Pilih versi archive untuk dibandingkan:",
+                options=range(len(archived_models)),
+                format_func=lambda i: f"{archived_models[i]['version']} - {archived_models[i]['archived_at'][:10]}"
+            )
+            
+            archive_metrics = archived_models[selected_archive].get('metrics', {})
+            
+            st.markdown("**Model Archive (Dipilih):**")
+            col1, col2, col3 = st.columns(3)
+            
+            with col1:
+                st.metric(
+                    "Akurasi",
+                    f"{archive_metrics.get('accuracy', 0):.4f}"
+                )
+            
+            with col2:
+                st.metric(
+                    "F1 Score",
+                    f"{archive_metrics.get('f1_score', 0):.4f}"
+                )
+            
+            with col3:
+                if isinstance(archive_metrics.get('training_samples'), int):
+                    st.metric(
+                        "Training Samples",
+                        f"{archive_metrics.get('training_samples', 0):,}"
+                    )
+            
+            st.divider()
+            
+            # Detailed comparison
+            st.markdown("**Analisis Perbandingan:**")
+            
+            comparison_data = {
+                'Metrik': [],
+                'Current': [],
+                'Archive': [],
+                'Difference': [],
+                'Improvement': []
+            }
+            
+            for metric_key in ['accuracy', 'f1_score']:
+                current_val = current_metrics.get(metric_key, 0)
+                archive_val = archive_metrics.get(metric_key, 0)
+                
+                comparison_data['Metrik'].append(metric_key.replace('_', ' ').title())
+                comparison_data['Current'].append(f"{current_val:.4f}")
+                comparison_data['Archive'].append(f"{archive_val:.4f}")
+                
+                diff = current_val - archive_val
+                comparison_data['Difference'].append(f"{diff:+.4f}")
+                comparison_data['Improvement'].append("✓ Better" if diff > 0 else ("✗ Worse" if diff < 0 else "="))
+            
+            df_comparison = pd.DataFrame(comparison_data)
+            st.dataframe(df_comparison, use_container_width=True, hide_index=True)
+        else:
+            st.info("Belum ada model archive untuk dibandingkan")
+    
+    # TAB 4: Update History
+    with mgmt_tab4:
+        st.markdown("#### Riwayat Update Model")
+        st.markdown("Melihat semua update model yang pernah dilakukan")
+        
+        history = updater.list_update_history(limit=20)
+        
+        if history:
+            st.markdown(f"**Total Updates: {len(history)}**")
+            
+            df_history = pd.DataFrame(history)
+            df_history['timestamp'] = pd.to_datetime(df_history['timestamp']).dt.strftime('%Y-%m-%d %H:%M:%S')
+            df_history['status'] = df_history['success'].map({True: '✓ Success', False: '✗ Failed'})
+            
+            st.dataframe(
+                df_history[['timestamp', 'reason', 'status']],
+                use_container_width=True,
+                hide_index=True,
+                column_config={
+                    'timestamp': st.column_config.TextColumn('Waktu', width='medium'),
+                    'reason': st.column_config.TextColumn('Alasan Update', width='large'),
+                    'status': st.column_config.TextColumn('Status', width='small')
+                }
+            )
+        else:
+            st.info("📭 Belum ada history update")
 
 
 def render_prediction_distribution(metrics_summary: Dict[str, Dict[str, Any]]):
