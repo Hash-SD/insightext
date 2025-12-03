@@ -265,7 +265,7 @@ def render_sidebar(retraining_service=None) -> str:
                 st.info("Service retraining tidak tersedia.")
         
         # Footer Version
-        st.caption("MLOps Streamlit Text AI v1.1 | © 2025")
+        st.caption("Kelompok 6 UHUY😎😋 | © 2025")
         
     return page
 
