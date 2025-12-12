@@ -379,9 +379,9 @@ def render_model_management_page():
     # 1. Page Header (Centered)
     st.markdown(
         """
-        <div style="text-align: center; margin-bottom: 30px;">
-            <h1 style="font-size: 2.5rem; margin-bottom: 10px;">🚀 Model Management</h1>
-            <p style="color: #64748B; font-size: 1.1rem;">Pusat kontrol deployment dan monitoring model AI</p>
+        <div style="text-align: center; margin-bottom: 25px;">
+            <h1 style="font-size: 1.8rem; margin-bottom: 8px;">🚀 Model Management</h1>
+            <p style="color: #64748B; font-size: 0.9rem;">Pusat kontrol deployment dan monitoring model AI</p>
         </div>
         """,
         unsafe_allow_html=True

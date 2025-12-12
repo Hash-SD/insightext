@@ -195,7 +195,15 @@ def main():
              st.error(f"Gagal memuat riwayat: {e}")
 
     elif selected_page == "Monitoring" or selected_page == "📊 Monitoring":
-        st.title("📊 Monitoring Dashboard")
+        st.markdown(
+            """
+            <div style="text-align: center; margin-bottom: 25px;">
+                <h1 style="font-size: 1.8rem; margin-bottom: 8px;">📊 Monitoring Dashboard</h1>
+                <p style="color: #64748B; font-size: 0.9rem;">Pantau performa dan metrik model secara real-time</p>
+            </div>
+            """,
+            unsafe_allow_html=True
+        )
         render_monitoring_dashboard(monitoring_service)
         
     elif selected_page == "Management" or selected_page == "🚀 Model Management":

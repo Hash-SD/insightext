@@ -97,7 +97,7 @@ class Settings:
         default_factory=lambda: os.getenv('APP_TITLE', 'Sistem AI Berbasis Teks')
     )
     APP_ICON: str = field(
-        default_factory=lambda: os.getenv('APP_ICON', '🤖')
+        default_factory=lambda: os.getenv('APP_ICON', '🔎')
     )
     MAX_INPUT_LENGTH: int = field(
         default_factory=lambda: int(os.getenv('MAX_INPUT_LENGTH', '5000'))

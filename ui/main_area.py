@@ -16,9 +16,9 @@ def render_main_layout() -> str:
     # 1. Header with Icon
     st.markdown(
         """
-        <div style="text-align: center; margin-bottom: 40px;">
-            <h1 style="font-size: 2.5rem; margin-bottom: 10px;">✨ Identifikasi Sentimen</h1>
-            <p style="color: #64748B;">Analisis emosi dan sentimen dari teks ulasan pelanggan secara instan.</p>
+        <div style="text-align: center; margin-bottom: 30px;">
+            <h1 style="font-size: 1.8rem; margin-bottom: 8px;">✨ Identifikasi Sentimen</h1>
+            <p style="color: #64748B; font-size: 0.9rem;">Analisis emosi dan sentimen dari teks ulasan pelanggan secara instan.</p>
         </div>
         """,
         unsafe_allow_html=True
@@ -117,14 +117,14 @@ def render_result_section(prediction_result: Dict[str, Any]):
         f"""<div class="glass-card" style="border-left: 5px solid {color}; margin-top: 20px;">
             <div style="display: flex; align-items: center; justify-content: space-between;">
                 <div>
-                    <p style="color: #64748B; margin-bottom: 5px; font-size: 0.9rem;">Hasil Analisis</p>
-                    <h2 style="color: {color}; margin: 0; display: flex; align-items: center; gap: 10px;">
-                        <span style="font-size: 2rem;">{icon}</span> {pred_label.upper()}
+                    <p style="color: #64748B; margin-bottom: 5px; font-size: 0.8rem;">Hasil Analisis</p>
+                    <h2 style="color: {color}; margin: 0; display: flex; align-items: center; gap: 8px; font-size: 1.5rem;">
+                        <span style="font-size: 1.5rem;">{icon}</span> {pred_label.upper()}
                     </h2>
                 </div>
                 <div style="text-align: right;">
-                    <p style="font-size: 2rem; font-weight: 700; color: #1E293B; margin: 0;">{confidence:.0%}</p>
-                    <p style="color: #64748B; margin: 0; font-size: 0.8rem;">Confidence</p>
+                    <p style="font-size: 1.5rem; font-weight: 700; color: #1E293B; margin: 0;">{confidence:.0%}</p>
+                    <p style="color: #64748B; margin: 0; font-size: 0.75rem;">Confidence</p>
                 </div>
             </div>
             {_render_progress_bar_html(confidence, color)}
