@@ -40,7 +40,7 @@ def load_css():
             background-color: var(--background);
             font-family: 'Inter', sans-serif;
             color: var(--text-main);
-            font-size: 1.2rem !important; /* Base Body Text: ~19.2px */
+            font-size: 1rem !important; /* Base Body Text: 16px (normal) */
         }
         
         h1 { font-size: 3rem !important; font-weight: 800 !important; }
@@ -56,23 +56,23 @@ def load_css():
         
         /* Paragraphs & Lists */
         p, li {
-            font-size: 1.2rem !important;
+            font-size: 1rem !important;
             line-height: 1.6 !important;
         }
         
         /* Captions / Small Text */
         .stCaption, small, .small-text, [data-testid="stCaptionContainer"] {
-            font-size: 1rem !important; /* ~16px */
+            font-size: 0.875rem !important; /* ~14px */
             color: var(--text-muted) !important;
         }
 
         /* Sidebar Specific Upscaling */
         [data-testid="stSidebar"] p, [data-testid="stSidebar"] div, [data-testid="stSidebar"] span {
-             font-size: 1.15rem !important;
+             font-size: 0.95rem !important;
         }
 
         [data-testid="stSidebar"] h3 {
-             font-size: 1.35rem !important; /* Increased by ~5 (approx 21-22px) */
+             font-size: 1.125rem !important; /* ~18px */
              font-weight: 700 !important;
              padding-top: 25px !important;      /* Increased from 15px */
              padding-bottom: 15px !important;   /* Increased from 5px */
@@ -95,7 +95,7 @@ def load_css():
 
         /* Upscale Radio Button Labels (Navigation) */
         [data-testid="stSidebar"] .stRadio label p {
-             font-size: 1.3rem !important; /* Bigger Nav */
+             font-size: 1.05rem !important; /* Navigation text */
         }
         
         /* Add spacing between radio options */
@@ -131,13 +131,13 @@ def load_css():
         
         /* Inputs (Text Area, Input, Selectbox) */
         .stTextArea textarea, .stTextInput input, .stSelectbox div[data-baseweb="select"] {
-            font-size: 1.2rem !important;
+            font-size: 1rem !important;
             font-family: 'Inter', sans-serif !important;
         }
         
         /* Buttons */
         div.stButton > button {
-            font-size: 1.2rem !important;
+            font-size: 1rem !important;
             padding: 0.8rem 1.5rem !important;
         }
 

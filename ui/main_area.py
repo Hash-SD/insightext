@@ -68,15 +68,24 @@ def render_example_buttons():
     st.markdown("### 🧪 Coba Contoh Teks")
     st.caption("Tidak punya teks? Klik salah satu tombol di bawah untuk mencoba demo:")
     
-    # Example Data
-    examples = [
-        ("👍 Positif", "Luar biasa! Produk ini sangat membantu pekerjaan saya sehari-hari.", "v1"),
-        ("👎 Negatif", "Sangat mengecewakan, aplikasi sering crash dan lambat.", "v1"),
-        ("😐 Netral", "Pengiriman standar, barang sampai sesuai estimasi waktu.", "v1")
-    ]
+    # Get selected model version
+    selected_model = st.session_state.get('selected_model_version', 'v1')
+    
+    # Example Data - language specific
+    if selected_model == 'v2':  # English model
+        examples = [
+            ("👍 Positive", "This product is amazing! It has greatly improved my daily workflow.", "v2"),
+            ("👎 Negative", "Very disappointing, the app crashes frequently and runs slowly.", "v2"),
+        ]
+    else:  # v1 - Indonesian model
+        examples = [
+            ("👍 Positif", "Luar biasa! Produk ini sangat membantu pekerjaan saya sehari-hari.", "v1"),
+            ("👎 Negatif", "Sangat mengecewakan, aplikasi sering crash dan lambat.", "v1"),
+            ("😐 Netral", "Pengiriman standar, barang sampai sesuai estimasi waktu.", "v1")
+        ]
     
     # Custom Grid for Buttons
-    cols = st.columns(3)
+    cols = st.columns(len(examples))
     for i, (label, text, ver) in enumerate(examples):
         # We use a callback to set state
         if cols[i].button(label, key=f"ex_btn_{i}", use_container_width=True):
