@@ -1,8 +1,8 @@
 [theme]
-primaryColor = "#FF4B4B"
+primaryColor = "#1a73e8"
 backgroundColor = "#FFFFFF"
-secondaryBackgroundColor = "#F0F2F6"
-textColor = "#262730"
+secondaryBackgroundColor = "#F8F9FA"  # Lighter gray for sidebar
+textColor = "#202124"
 font = "sans serif"
 
 [server]

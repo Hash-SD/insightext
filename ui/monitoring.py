@@ -48,23 +48,13 @@ MODEL_METADATA = {
 def render_metrics_table(metrics_summary: Dict[str, Dict[str, Any]]):
     """
     Render metrics table untuk display accuracy per model version.
-    
-    Args:
-        metrics_summary: Dictionary dengan structure:
-            {
-                'v1': {
-                    'prediction_count': int,
-                    'avg_confidence': float,
-                    'avg_latency': float,
-                    ...
-                },
-                ...
-            }
     """
+    st.markdown('<div class="card">', unsafe_allow_html=True)
     st.markdown("###  Evaluasi Model")
     
     if not metrics_summary:
         st.info("Belum ada data metrik tersedia")
+        st.markdown('</div>', unsafe_allow_html=True)
         return
     
     # Prepare data untuk table
@@ -105,20 +95,19 @@ def render_metrics_table(metrics_summary: Dict[str, Dict[str, Any]]):
             'Avg Latency (ms)': st.column_config.TextColumn('Avg Latency (ms)', width='small')
         }
     )
+    st.markdown('</div>', unsafe_allow_html=True)
 
 
 def render_latency_histogram(latency_data: List[float], model_version: Optional[str] = None):
     """
     Render latency histogram menggunakan Plotly.
-    
-    Args:
-        latency_data: List of latency values dalam seconds
-        model_version: Specific model version untuk filter, atau None untuk all
     """
+    st.markdown('<div class="card">', unsafe_allow_html=True)
     st.markdown("### ⏱️ Distribusi Latency")
     
     if not latency_data or len(latency_data) == 0:
         st.info("Belum ada data latency tersedia")
+        st.markdown('</div>', unsafe_allow_html=True)
         return
     
     # Convert to milliseconds
@@ -131,7 +120,7 @@ def render_latency_histogram(latency_data: List[float], model_version: Optional[
         x=latency_ms,
         nbinsx=20,
         marker=dict(
-            color='#007bff',
+            color='#1a73e8', # Updated to primary blue
             line=dict(color='white', width=1)
         ),
         hovertemplate='<b>Latency:</b> %{x:.2f} ms<br><b>Count:</b> %{y}<extra></extra>'
@@ -142,7 +131,7 @@ def render_latency_histogram(latency_data: List[float], model_version: Optional[
     fig.add_vline(
         x=threshold_ms,
         line_dash="dash",
-        line_color="red",
+        line_color="#d93025", # Google Red
         annotation_text=f"Threshold: {threshold_ms:.0f} ms",
         annotation_position="top right"
     )
@@ -152,11 +141,12 @@ def render_latency_histogram(latency_data: List[float], model_version: Optional[
         yaxis_title="Jumlah Prediksi",
         title=f"Distribusi Latency {f'untuk {model_version}' if model_version else '(Semua Model)'}",
         showlegend=False,
-        height=400,
-        hovermode='x unified'
+        height=350, # Slightly smaller
+        hovermode='x unified',
+        margin=dict(l=20, r=20, t=40, b=20)
     )
     
-    st.plotly_chart(fig, width="stretch")
+    st.plotly_chart(fig, use_container_width=True)
     
     # Display statistics
     col1, col2, col3, col4 = st.columns(4)
@@ -173,48 +163,51 @@ def render_latency_histogram(latency_data: List[float], model_version: Optional[
     with col4:
         # Count predictions above threshold
         above_threshold = sum(1 for lat in latency_ms if lat > threshold_ms)
-        st.metric("Di Atas Threshold", f"{above_threshold}")
+        st.metric("Di Atas Threshold", f"{above_threshold}", delta_color="inverse")
+    
+    st.markdown('</div>', unsafe_allow_html=True)
 
 
 def render_drift_score(drift_score: float):
     """
     Render drift score dengan st.metric.
-    
-    Args:
-        drift_score: Drift score value (0-1, higher = more drift)
     """
+    st.markdown('<div class="card">', unsafe_allow_html=True)
     st.markdown("### 📈 Data Drift Detection")
     
     # Determine status based on drift score
     if drift_score < 0.2:
         status = "Rendah"
-        color = "green"
+        color = "#1e8e3e" # Green
         delta_color = "normal"
     elif drift_score < 0.4:
         status = "Sedang"
-        color = "orange"
+        color = "#f9ab00" # Warning
         delta_color = "off"
     else:
         status = "Tinggi"
-        color = "red"
+        color = "#d93025" # Red
         delta_color = "inverse"
     
-    st.metric(
-        label="Drift Score",
-        value=f"{drift_score:.2%}",
-        delta=status,
-        delta_color=delta_color,
-        help="Skor drift menunjukkan seberapa banyak distribusi data saat ini berbeda dari data training"
-    )
+    col1, col2 = st.columns([1, 2])
+    with col1:
+        st.metric(
+            label="Drift Score",
+            value=f"{drift_score:.2%}",
+            delta=status,
+            delta_color=delta_color
+        )
     
-    st.markdown(f"**Status:** <span style='color: {color};'>{status}</span>", unsafe_allow_html=True)
-    st.markdown(
-        "Drift score mengukur perubahan distribusi data. "
-        "Skor tinggi menandakan model mungkin perlu di-retrain."
-    )
+    with col2:
+        st.caption(
+            "Drift score mengukur perubahan distribusi data. "
+            "Skor tinggi menandakan model mungkin perlu di-retrain."
+        )
+        # Progress bar
+        st.progress(min(drift_score, 1.0))
+        st.markdown(f"**Status:** <span style='color: {color}; font-weight:bold;'>{status}</span>", unsafe_allow_html=True)
     
-    # Progress bar untuk visual representation
-    st.progress(min(drift_score, 1.0))
+    st.markdown('</div>', unsafe_allow_html=True)
 
 
 def render_promotion_buttons(current_version: str):
