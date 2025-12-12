@@ -36,7 +36,7 @@ def render_text_input() -> str:
             "Netral": "Paket sudah diterima. Sesuai dengan deskripsi produk. Pengiriman sesuai jadwal. Tidak ada masalah."
         }
     else:
-        # English examples (v2 IMDB) - dengan sentimen yang sangat jelas
+        # English examples (v2) - dengan sentimen yang sangat jelas
         examples = {
             "Positive": "This movie is absolutely amazing! I loved every single moment. The plot is brilliant, acting is superb, visuals are stunning. Best movie ever! Highly recommend to everyone!",
             "Negative": "Terrible movie! Worst film I've ever seen. The story is awful, acting is horrible, complete waste of time and money. Very disappointed and angry. Never watching again!",
@@ -143,7 +143,7 @@ def render_results(prediction_result: Dict[str, Any]):
     if not prediction_result:
         return
     
-    st.markdown("### 📊 Hasil Analisis")
+    st.markdown("### 🎯 Hasil Analisis")
     
     # Main result display
     prediction = prediction_result.get('prediction', 'N/A')

@@ -3,7 +3,7 @@ Sidebar components untuk MLOps Streamlit Text AI application.
 
 Module ini menyediakan fungsi untuk render sidebar dengan:
 - Consent checkbox untuk data storage
-- Model selector (v1: Indonesian, v2: IMDB English)
+- Model selector (v1: Indonesian, v2: English)
 - Model info display (Naive Bayes)
 - Retraining button (dengan autentikasi admin)
 """
@@ -58,24 +58,24 @@ def _check_session_timeout(timeout_minutes: int = 30) -> bool:
 # Naive Bayes Model Metadata
 MODEL_METADATA = {
     'v1': {
-        'name': 'Naive Bayes Indonesian',
+        'name': 'NB Indonesian Sentiment',
         'model_type': 'MultinomialNB + TF-IDF',
         'task': 'Sentiment Analysis',
         'language': 'Indonesian',
         'labels': ['negatif', 'netral', 'positif'],
         'accuracy': 0.6972,
         'f1_score': 0.6782,
-        'description': 'Model sentiment analysis untuk teks Bahasa Indonesia (3 kelas)'
+        'description': 'Analisis sentimen Bahasa Indonesia (3 kelas)'
     },
     'v2': {
-        'name': 'Naive Bayes IMDB',
+        'name': 'NB English Sentiment',
         'model_type': 'MultinomialNB + TF-IDF',
         'task': 'Sentiment Analysis',
         'language': 'English',
         'labels': ['negative', 'positive'],
         'accuracy': 0.8647,
         'f1_score': 0.8647,
-        'description': 'Model sentiment analysis untuk teks English (binary: positive/negative)'
+        'description': 'Analisis sentimen English (binary)'
     }
 }
 
@@ -115,8 +115,8 @@ def _render_model_selection_ui() -> str:
     """
     # Model options
     model_options = {
-        'v1': '🇮🇩 Indonesian (Default)',
-        'v2': '🇺🇸 English IMDB'
+        'v1': '🇮🇩 Indonesian',
+        'v2': '🇺🇸 English (Default)'
     }
     
     # Get current selection from session state
@@ -230,7 +230,7 @@ def render_sidebar(retraining_service=None) -> str:
         st.header("🧭 Navigasi")
         page = st.radio(
             "Pilih Halaman:",
-            ["🔮 Prediksi", "📊 Monitoring"],
+            ["🔮 Prediksi", "📊 Monitoring", "🚀 Model Management"],
             index=0,
             label_visibility="collapsed"
         )

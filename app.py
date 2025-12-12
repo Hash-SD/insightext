@@ -29,6 +29,7 @@ from services.retraining_service import RetrainingService
 from ui.sidebar import render_sidebar
 from ui.main_area import render_main_area, render_prediction_history, render_results, render_prediction_button
 from ui.monitoring import render_monitoring_dashboard
+from ui.model_management import render_model_management_page
 
 
 # Setup logger
@@ -379,14 +380,23 @@ def main():
     
     # Page: Monitoring
     elif selected_page == "📊 Monitoring":
-        st.title("📊 Monitoring & Manajemen Model")
-        st.caption("Pantau performa model dan kelola deployment secara real-time")
+        st.title("📈 Performance Metrics")
+        st.caption("Pantau performa model dan deteksi anomali secara real-time")
         st.markdown("---")
         try:
             render_monitoring_dashboard(monitoring_service=monitoring_service)
         except Exception as e:
             st.error(f"❌ Gagal memuat dashboard monitoring: {str(e)}")
             logger.error(f"Error rendering monitoring dashboard: {e}")
+            log_error(logger, e)
+    
+    # Page: Model Management
+    elif selected_page == "🚀 Model Management":
+        try:
+            render_model_management_page()
+        except Exception as e:
+            st.error(f"❌ Gagal memuat halaman Model Management: {str(e)}")
+            logger.error(f"Error rendering model management page: {e}")
             log_error(logger, e)
 
 

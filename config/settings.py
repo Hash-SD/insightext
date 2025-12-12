@@ -111,7 +111,7 @@ class Settings:
         default_factory=lambda: ['v1', 'v2']  # v1: Indonesian, v2: IMDB English
     )
     DEFAULT_MODEL_VERSION: str = field(
-        default_factory=lambda: os.getenv('DEFAULT_MODEL_VERSION', 'v1')
+        default_factory=lambda: os.getenv('DEFAULT_MODEL_VERSION', 'v2')
     )
     
     # Logging Configuration
