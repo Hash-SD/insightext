@@ -18,7 +18,7 @@ from services.retraining_service import RetrainingService
 
 # Import New UI Components
 from ui.sidebar import render_sidebar
-from ui.main_area import render_input_section, render_results_section, render_prediction_button, render_prediction_history
+from ui.main_area import render_input_section, render_results_section, render_prediction_button
 from ui.monitoring import render_monitoring_dashboard
 from ui.model_management import render_model_management_page
 from ui.styles import load_css
