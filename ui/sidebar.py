@@ -255,15 +255,6 @@ def render_sidebar(retraining_service=None) -> str:
         st.subheader("🛠️ Pengaturan Lain")
         render_consent_checkbox()
         
-        st.divider()
-        
-        # 3. Akses Admin (Footer)
-        with st.expander("👤 Akses Admin"):
-            if retraining_service:
-                _render_admin_section(retraining_service)
-            else:
-                st.info("Service retraining tidak tersedia.")
-        
         # Footer Version
         st.caption("Kelompok 6 UHUY😎😋 | © 2025")
         

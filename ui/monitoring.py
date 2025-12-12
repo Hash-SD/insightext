@@ -61,7 +61,7 @@ def render_metrics_table(metrics_summary: Dict[str, Dict[str, Any]]):
                 ...
             }
     """
-    st.markdown("### �  Metrik Model")
+    st.markdown("###  Evaluasi Model")
     
     if not metrics_summary:
         st.info("Belum ada data metrik tersedia")
@@ -820,7 +820,7 @@ def render_prediction_distribution(metrics_summary: Dict[str, Dict[str, Any]]):
     Args:
         metrics_summary: Metrics summary dari monitoring service
     """
-    st.markdown("### � Disstribusi Prediksi per Model")
+    st.markdown("###  Frekuensi Prediksi")
     
     if not metrics_summary:
         st.info("Belum ada data distribusi tersedia")
@@ -899,11 +899,11 @@ def render_monitoring_dashboard(monitoring_service):
         
         st.markdown("---")
 
-        # Tabs for better organization
-        tab1, tab2, tab3 = st.tabs(["📈 Overview", "⏱️ Performa & Latency", "🚀 Model Management"])
+        # Tabs for better organization (Model Management moved to dedicated page)
+        tab1, tab2 = st.tabs(["📈 Overview", "⏱️ Performa & Latency"])
         
         with tab1:
-            st.subheader("Ringkasan Metrik Model")
+            st.subheader("📐 Evaluasi Model")
             render_metrics_table(metrics_summary)
             
             st.markdown("---")
@@ -913,15 +913,8 @@ def render_monitoring_dashboard(monitoring_service):
             render_drift_score(drift_score)
 
         with tab2:
-            st.subheader("Analisis Latency")
+            st.subheader("⏱️ Analisis Latency")
             render_latency_histogram(latency_data, selected_version)
-            
-        with tab3:
-            st.subheader("Manajemen Model")
-            if selected_version:
-                render_promotion_buttons(selected_version)
-            else:
-                st.info("Pilih versi model di sidebar untuk melihat opsi manajemen.")
             
     except ConnectionError as e:
         st.error(f"❌ Gagal terhubung ke database: {str(e)}")
