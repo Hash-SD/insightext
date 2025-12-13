@@ -1,4 +1,4 @@
-# InsightText - Sistem AI Berbasis Teks untuk Sentiment Analysis
+# 🤖💬📊InsightText - Sistem AI Berbasis Teks untuk Sentiment Analysis
 
 ## ✨ Ringkasan
 Aplikasi MLOps dengan Streamlit untuk analisis sentimen teks menggunakan Naive Bayes dengan TF-IDF. Dilengkapi dengan model management system yang memungkinkan update model dengan archiving dan rollback.
