@@ -1,63 +1,46 @@
 """
-Model Updater untuk Naive Bayes Sentiment Analysis.
+Model Updater for Naive Bayes Sentiment Analysis.
 
-Modul ini menyediakan fungsi untuk:
-1. Update model v1 dengan model baru yang sudah dilatih
-2. Validasi model baru sebelum deployment
-3. Automatic archiving model lama
-4. Rollback jika diperlukan
-5. Generate change log dan update report
+Provides functionality for:
+1. Updating v1 model with newly trained model
+2. Validating new model before deployment
+3. Automatic archiving of old model
+4. Rollback if needed
+5. Generating change log and update report
 """
 
 import json
 import logging
 import shutil
-import numpy as np
 from datetime import datetime
 from pathlib import Path
 from typing import Dict, Any, Optional, Tuple, Callable
+
 from models.model_archiver import ModelArchiver
 
 
 class ModelUpdateValidator:
-    """
-    Validator untuk memastikan model baru layak untuk production.
-    Melakukan quality checks sebelum model di-deploy.
-    """
+    """Validator to ensure new model is production-ready."""
     
     def __init__(self):
-        """Initialize model validator."""
         self.logger = logging.getLogger(__name__)
-        self.validation_results = {}
     
     def validate_model_structure(self, model_path: str) -> Tuple[bool, Dict[str, Any]]:
-        """
-        Validate struktur file model.
-        
-        Args:
-            model_path: Path ke direktori model
-            
-        Returns:
-            Tuple of (is_valid, validation_details)
-        """
+        """Validate model file structure."""
         try:
             model_dir = Path(model_path)
             required_files = ['model_pipeline.pkl', 'preprocessor.pkl', 'training_config.json']
             
             details = {
                 'path_exists': model_dir.exists(),
-                'required_files': {}
+                'required_files': {f: (model_dir / f).exists() for f in required_files}
             }
-            
-            for file in required_files:
-                file_path = model_dir / file
-                details['required_files'][file] = file_path.exists()
             
             is_valid = all(details['required_files'].values())
             return is_valid, details
             
         except Exception as e:
-            self.logger.error(f"Error validating model structure: {str(e)}")
+            self.logger.error(f"Error validating model structure: {e}")
             return False, {'error': str(e)}
     
     def validate_model_performance(
@@ -66,17 +49,7 @@ class ModelUpdateValidator:
         min_accuracy: float = 0.60,
         min_f1_score: float = 0.50
     ) -> Tuple[bool, Dict[str, Any]]:
-        """
-        Validate performance metrics model.
-        
-        Args:
-            metrics: Dictionary berisi metrics model
-            min_accuracy: Minimum accuracy threshold
-            min_f1_score: Minimum F1 score threshold
-            
-        Returns:
-            Tuple of (is_valid, validation_details)
-        """
+        """Validate model performance metrics."""
         details = {
             'accuracy_check': {
                 'value': metrics.get('accuracy', 0),
@@ -98,16 +71,7 @@ class ModelUpdateValidator:
         predict_func: Callable,
         test_inputs: Optional[list] = None
     ) -> Tuple[bool, Dict[str, Any]]:
-        """
-        Validate bahwa prediction function berfungsi dengan baik.
-        
-        Args:
-            predict_func: Fungsi prediksi untuk di-test
-            test_inputs: List test inputs (optional)
-            
-        Returns:
-            Tuple of (is_valid, validation_details)
-        """
+        """Validate that prediction function works correctly."""
         details = {
             'function_callable': callable(predict_func),
             'test_results': []
@@ -133,33 +97,22 @@ class ModelUpdateValidator:
             return is_valid, details
             
         except Exception as e:
-            self.logger.error(f"Error validating prediction function: {str(e)}")
+            self.logger.error(f"Error validating prediction function: {e}")
             return False, {'error': str(e)}
 
 
 class ModelUpdater:
-    """
-    Main class untuk update model v1 dengan model baru.
-    Menangani archiving, validation, dan deployment.
-    """
+    """Main class for updating v1 model with new model."""
     
     def __init__(
         self,
         current_model_path: str = 'models/saved_model',
         archive_base_path: str = 'models/archived'
     ):
-        """
-        Initialize model updater.
-        
-        Args:
-            current_model_path: Path ke production model
-            archive_base_path: Path ke archive directory
-        """
         self.logger = logging.getLogger(__name__)
         self.current_model_path = Path(current_model_path)
         self.archiver = ModelArchiver(archive_base_path)
         self.validator = ModelUpdateValidator()
-        self.update_log = []
     
     def update_model_v1(
         self,
@@ -170,39 +123,18 @@ class ModelUpdater:
         new_predict_func: Optional[Callable] = None
     ) -> Tuple[bool, Dict[str, Any]]:
         """
-        Update model v1 dengan model baru.
+        Update model v1 with new model.
         
         Process:
-        1. Validate model baru
-        2. Archive model lama
-        3. Copy model baru ke production
+        1. Validate new model
+        2. Archive old model
+        3. Copy new model to production
         4. Generate update report
-        
-        Args:
-            new_model_path: Path ke directory model baru
-            new_metrics: Metrics dari model baru (accuracy, f1_score, dll)
-            update_reason: Alasan update (e.g., 'Improved with balanced data')
-            auto_validate: Auto-validate model baru sebelum update (default: True)
-            new_predict_func: Prediction function dari model baru untuk validation
-            
-        Returns:
-            Tuple of (success, report_dict)
-            
-        Example:
-            >>> updater = ModelUpdater()
-            >>> success, report = updater.update_model_v1(
-            ...     new_model_path='path/to/new/model',
-            ...     new_metrics={'accuracy': 0.75, 'f1_score': 0.73},
-            ...     update_reason='Trained with balanced data using oversampling',
-            ...     new_predict_func=model.predict
-            ... )
-            >>> if success:
-            ...     print(f"Model updated successfully: {report}")
         """
         try:
-            self.logger.info("=" * 80)
+            self.logger.info("=" * 60)
             self.logger.info("Starting model v1 update process")
-            self.logger.info("=" * 80)
+            self.logger.info("=" * 60)
             
             report = {
                 'success': False,
@@ -211,50 +143,37 @@ class ModelUpdater:
                 'steps': {}
             }
             
-            # Step 1: Validate model baru jika auto_validate=True
+            # Step 1: Validate new model
             if auto_validate:
                 self.logger.info("Step 1: Validating new model...")
                 
-                # Validate structure
                 struct_valid, struct_details = self.validator.validate_model_structure(new_model_path)
-                report['steps']['structure_validation'] = {
-                    'passed': struct_valid,
-                    'details': struct_details
-                }
+                report['steps']['structure_validation'] = {'passed': struct_valid, 'details': struct_details}
                 
                 if not struct_valid:
                     report['error'] = 'Model structure validation failed'
-                    self.logger.error(f"Model structure validation failed: {struct_details}")
+                    self.logger.error(f"Structure validation failed: {struct_details}")
                     return False, report
                 
-                # Validate performance
                 perf_valid, perf_details = self.validator.validate_model_performance(new_metrics)
-                report['steps']['performance_validation'] = {
-                    'passed': perf_valid,
-                    'details': perf_details
-                }
+                report['steps']['performance_validation'] = {'passed': perf_valid, 'details': perf_details}
                 
                 if not perf_valid:
                     report['error'] = 'Model performance validation failed'
-                    self.logger.error(f"Model performance validation failed: {perf_details}")
+                    self.logger.error(f"Performance validation failed: {perf_details}")
                     return False, report
                 
-                # Validate prediction function jika provided
                 if new_predict_func is not None:
                     pred_valid, pred_details = self.validator.validate_prediction_function(new_predict_func)
-                    report['steps']['prediction_validation'] = {
-                        'passed': pred_valid,
-                        'details': pred_details
-                    }
+                    report['steps']['prediction_validation'] = {'passed': pred_valid, 'details': pred_details}
                     
                     if not pred_valid:
                         report['error'] = 'Prediction function validation failed'
-                        self.logger.error(f"Prediction function validation failed: {pred_details}")
                         return False, report
                 
                 self.logger.info("✓ All validations passed")
             
-            # Step 2: Get current model metrics untuk archiving
+            # Step 2: Get current model metrics
             self.logger.info("Step 2: Preparing to archive current model...")
             current_metrics = self._get_current_model_metrics()
             
@@ -283,13 +202,11 @@ class ModelUpdater:
             
             if not deploy_success:
                 report['error'] = 'Model deployment failed'
-                self.logger.error("Model deployment failed")
                 return False, report
             
-            self.logger.info(f"✓ New model deployed successfully")
+            self.logger.info("✓ New model deployed successfully")
             
             # Step 5: Generate comparison report
-            self.logger.info("Step 5: Generating comparison report...")
             comparison = self.archiver.get_model_comparison(
                 current_metrics=new_metrics,
                 archive_path=archive_path
@@ -299,41 +216,33 @@ class ModelUpdater:
             
             # Step 6: Create update summary
             report['success'] = True
+            old_acc = current_metrics.get('accuracy', 0.0)
+            new_acc = new_metrics.get('accuracy', 0.0)
+            
             report['summary'] = {
                 'old_model_archive': archive_path,
-                'old_accuracy': current_metrics.get('accuracy'),
-                'new_accuracy': new_metrics.get('accuracy'),
-                'accuracy_improvement': (new_metrics.get('accuracy', 0) - current_metrics.get('accuracy', 0)) * 100,
+                'old_accuracy': old_acc,
+                'new_accuracy': new_acc,
+                'accuracy_improvement': (new_acc - old_acc) * 100,
                 'deployment_time': datetime.now().isoformat()
             }
             
-            self.logger.info("=" * 80)
-            self.logger.info(f"✓ Model update completed successfully")
-            # Safe formatting with None defaults
-            old_acc = current_metrics.get('accuracy', 0.0)
-            new_acc = new_metrics.get('accuracy', 0.0)
-            improvement = report['summary']['accuracy_improvement']
+            self.logger.info("=" * 60)
+            self.logger.info("✓ Model update completed successfully")
             self.logger.info(f"  Old accuracy: {old_acc:.4f}")
             self.logger.info(f"  New accuracy: {new_acc:.4f}")
-            self.logger.info(f"  Improvement: {improvement:.2f}%")
-            self.logger.info("=" * 80)
+            self.logger.info(f"  Improvement: {report['summary']['accuracy_improvement']:.2f}%")
+            self.logger.info("=" * 60)
             
-            # Save update log
             self._save_update_log(report)
-            
             return True, report
             
         except Exception as e:
-            self.logger.error(f"Error during model update: {str(e)}", exc_info=True)
+            self.logger.error(f"Error during model update: {e}", exc_info=True)
             return False, {'error': str(e), 'timestamp': datetime.now().isoformat()}
     
     def _get_current_model_metrics(self) -> Dict[str, Any]:
-        """
-        Get metrics dari current production model.
-        
-        Returns:
-            Dictionary berisi current model metrics
-        """
+        """Get metrics from current production model."""
         try:
             config_path = self.current_model_path / 'training_config.json'
             if config_path.exists():
@@ -342,46 +251,31 @@ class ModelUpdater:
                 return config.get('metrics', {})
             return {}
         except Exception as e:
-            self.logger.warning(f"Could not read current model metrics: {str(e)}")
+            self.logger.warning(f"Could not read current model metrics: {e}")
             return {}
     
     def _deploy_model(self, source_model_path: str) -> bool:
-        """
-        Copy model baru ke production directory.
-        
-        Args:
-            source_model_path: Path ke model baru
-            
-        Returns:
-            True jika deploy berhasil
-        """
+        """Copy new model to production directory."""
         try:
             source_dir = Path(source_model_path)
             
-            # Clear current production model
             if self.current_model_path.exists():
                 shutil.rmtree(self.current_model_path)
             
-            # Copy new model
             self.current_model_path.mkdir(parents=True, exist_ok=True)
             for file in source_dir.glob('*'):
                 if file.is_file():
                     shutil.copy2(file, self.current_model_path / file.name)
             
-            self.logger.info(f"Model deployed successfully to: {self.current_model_path}")
+            self.logger.info(f"Model deployed to: {self.current_model_path}")
             return True
             
         except Exception as e:
-            self.logger.error(f"Error deploying model: {str(e)}")
+            self.logger.error(f"Error deploying model: {e}")
             return False
     
     def _save_update_log(self, report: Dict[str, Any]):
-        """
-        Save update report ke file log.
-        
-        Args:
-            report: Update report dictionary
-        """
+        """Save update report to log file."""
         try:
             log_dir = Path('logs/model_updates')
             log_dir.mkdir(parents=True, exist_ok=True)
@@ -395,22 +289,14 @@ class ModelUpdater:
             self.logger.info(f"Update log saved to: {log_file}")
             
         except Exception as e:
-            self.logger.warning(f"Could not save update log: {str(e)}")
+            self.logger.warning(f"Could not save update log: {e}")
     
     def rollback_to_archive(self, archive_path: str) -> Tuple[bool, Dict[str, Any]]:
-        """
-        Rollback ke model dari archive jika terjadi masalah.
-        
-        Args:
-            archive_path: Path ke archived model
-            
-        Returns:
-            Tuple of (success, report)
-        """
+        """Rollback to model from archive."""
         try:
-            self.logger.info("=" * 80)
+            self.logger.info("=" * 60)
             self.logger.info("Starting rollback process...")
-            self.logger.info("=" * 80)
+            self.logger.info("=" * 60)
             
             # Archive current (problematic) model
             timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
@@ -440,19 +326,11 @@ class ModelUpdater:
             return success, report
             
         except Exception as e:
-            self.logger.error(f"Error during rollback: {str(e)}", exc_info=True)
+            self.logger.error(f"Error during rollback: {e}", exc_info=True)
             return False, {'error': str(e)}
     
     def list_update_history(self, limit: int = 10) -> list:
-        """
-        List history update model.
-        
-        Args:
-            limit: Jumlah records yang di-display
-            
-        Returns:
-            List of update records
-        """
+        """List model update history."""
         try:
             log_dir = Path('logs/model_updates')
             if not log_dir.exists():
@@ -472,5 +350,5 @@ class ModelUpdater:
             return updates
             
         except Exception as e:
-            self.logger.error(f"Error listing update history: {str(e)}")
+            self.logger.error(f"Error listing update history: {e}")
             return []

@@ -1,40 +1,29 @@
-"""
-Logging utility untuk aplikasi MLOps Streamlit Text AI.
-Menyediakan fungsi untuk setup logger dengan file dan console handlers.
-"""
+"""Logging utility for MLOps Streamlit Text AI application."""
 
 import logging
 import sys
 from pathlib import Path
 from typing import Optional
-from datetime import datetime
 
 
-def setup_logger(
-    name: str,
-    log_file: str,
-    level: int = logging.INFO
-) -> logging.Logger:
+def setup_logger(name: str, log_file: str, level: int = logging.INFO) -> logging.Logger:
     """
-    Setup logger dengan file handler dan console handler.
+    Setup logger with file and console handlers.
     
     Args:
-        name: Nama logger
-        log_file: Path ke file log
-        level: Level logging (default: logging.INFO)
+        name: Logger name
+        log_file: Path to log file
+        level: Logging level (default: INFO)
     
     Returns:
-        logging.Logger: Configured logger instance
+        Configured logger instance
     """
-    # Create logger
     logger = logging.getLogger(name)
     logger.setLevel(level)
     
-    # Avoid duplicate handlers
     if logger.handlers:
         return logger
     
-    # Create formatters
     log_format = logging.Formatter(
         fmt='%(asctime)s - %(name)s - %(levelname)s - %(message)s',
         datefmt='%Y-%m-%d %H:%M:%S'
@@ -58,19 +47,8 @@ def setup_logger(
     return logger
 
 
-def log_error(
-    logger: logging.Logger,
-    error: Exception,
-    context: Optional[dict] = None
-) -> None:
-    """
-    Log error dengan stack trace dan context information.
-    
-    Args:
-        logger: Logger instance
-        error: Exception yang akan di-log
-        context: Dictionary dengan context information tambahan
-    """
+def log_error(logger: logging.Logger, error: Exception, context: Optional[dict] = None) -> None:
+    """Log error with stack trace and context information."""
     error_message = f"Error: {type(error).__name__} - {str(error)}"
     
     if context:

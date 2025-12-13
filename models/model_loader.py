@@ -1,27 +1,18 @@
 """
-Model loader untuk Naive Bayes Sentiment Analysis.
-Menggunakan model MultinomialNB dengan TF-IDF yang sudah di-train.
-Mendukung multi-model: v1 (Indonesian) dan v2 (IMDB English)
+Model loader for Naive Bayes Sentiment Analysis.
+Supports multi-model: v1 (Indonesian) and v2 (IMDB English)
 """
 
 import logging
 from typing import Any, Dict, List, Optional, Callable, Tuple
-from models.naive_bayes_loader import NaiveBayesModelLoader, LABEL_MAP_V1, ID_TO_LABEL_V1, LABEL_MAP_V2, ID_TO_LABEL_V2
+
+from models.naive_bayes_loader import NaiveBayesModelLoader
 
 
 class ModelLoader:
-    """
-    Model loader untuk Naive Bayes Sentiment Analysis.
-    Mendukung multi-model: v1 (Indonesian) dan v2 (IMDB English)
-    """
+    """Model loader for Naive Bayes Sentiment Analysis."""
     
     def __init__(self, mlflow_tracking_uri: Optional[str] = None):
-        """
-        Initialize model loader.
-        
-        Args:
-            mlflow_tracking_uri: URI untuk MLflow (untuk kompatibilitas, tidak digunakan)
-        """
         self.mlflow_tracking_uri = mlflow_tracking_uri
         self.logger = logging.getLogger(__name__)
         self._loaders: Dict[str, NaiveBayesModelLoader] = {}
@@ -35,31 +26,23 @@ class ModelLoader:
             self._loaders[version] = NaiveBayesModelLoader(version=version)
         return self._loaders[version]
     
-    def load_model(
-        self, 
-        version: str = 'v1', 
-        stage: str = 'Production'
-    ) -> Callable[[str], Tuple[str, float]]:
+    def load_model(self, version: str = 'v1', stage: str = 'Production') -> Callable[[str], Tuple[str, float]]:
         """
         Load Naive Bayes model.
         
         Args:
             version: Model version ('v1' = Indonesian, 'v2' = IMDB English)
-            stage: Model stage (tidak digunakan, untuk kompatibilitas)
+            stage: Model stage (unused, for compatibility)
             
         Returns:
-            Prediction function yang menerima text dan return (prediction, confidence)
+            Prediction function that accepts text and returns (prediction, confidence)
         """
         self.logger.info(f"Loading Naive Bayes model (version: {version})")
         
-        # Get loader for version
         loader = self._get_loader(version)
-        
-        # Ensure model is loaded
         if not loader.is_model_loaded():
             loader.load_model()
         
-        # Return prediction function
         def predict_func(text: str) -> Tuple[str, float]:
             prediction, confidence, _ = loader.predict(text)
             return prediction, confidence
@@ -67,90 +50,52 @@ class ModelLoader:
         return predict_func
     
     def get_model_metadata(self, version: str = 'v1') -> Dict[str, Any]:
-        """
-        Get model metadata.
-        
-        Args:
-            version: Model version ('v1' atau 'v2')
-            
-        Returns:
-            Dictionary dengan model metadata
-        """
+        """Get model metadata."""
         loader = self._get_loader(version)
         if not loader.is_model_loaded():
             loader.load_model()
         
         metadata = loader.get_model_metadata()
-        metadata['version'] = version
-        metadata['stage'] = 'Production'
-        metadata['is_cached'] = loader.is_model_loaded()
-        
+        metadata.update({
+            'version': version,
+            'stage': 'Production',
+            'is_cached': loader.is_model_loaded()
+        })
         return metadata
     
     def list_available_versions(self) -> List[str]:
-        """
-        List available model versions.
-        
-        Returns:
-            List of available versions
-        """
+        """List available model versions."""
         return ['v1', 'v2']
     
-    def promote_model(
-        self, 
-        version: str, 
-        from_stage: str, 
-        to_stage: str
-    ) -> bool:
-        """
-        Placeholder untuk promote model.
-        Tidak digunakan karena hanya ada satu model.
-        
-        Returns:
-            True (selalu berhasil untuk kompatibilitas)
-        """
-        self.logger.info(f"Model promotion not needed for single Naive Bayes model")
+    def promote_model(self, version: str, from_stage: str, to_stage: str) -> bool:
+        """Placeholder for model promotion (not used for single model)."""
+        self.logger.info("Model promotion not needed for single Naive Bayes model")
         return True
     
     def clear_cache(self, version: Optional[str] = None):
-        """
-        Clear model cache (untuk kompatibilitas).
-        """
+        """Clear model cache."""
         self.logger.info("Cache clear requested")
+        if version and version in self._loaders:
+            del self._loaders[version]
+        elif version is None:
+            self._loaders.clear()
     
     def get_cache_info(self) -> Dict[str, Any]:
-        """
-        Get cache information.
-        
-        Returns:
-            Dictionary dengan cache info
-        """
+        """Get cache information."""
+        cached_models = [v for v, loader in self._loaders.items() if loader.is_model_loaded()]
         return {
-            'cached_models': ['naive-bayes-tfidf'] if self.nb_loader.is_model_loaded() else [],
-            'cache_size': 1 if self.nb_loader.is_model_loaded() else 0,
+            'cached_models': cached_models,
+            'cache_size': len(cached_models),
             'mlflow_uri': self.mlflow_tracking_uri,
             'default_version': self.default_version,
             'model_type': 'Naive Bayes (MultinomialNB)',
             'vectorizer': 'TF-IDF'
         }
     
-    def predict_with_scores(
-        self, 
-        text: str
-    ) -> Dict[str, Any]:
-        """
-        Predict dengan semua scores untuk setiap label.
-        
-        Args:
-            text: Input text
-            
-        Returns:
-            Dictionary dengan prediction, confidence, dan all_scores
-        """
-        prediction, confidence, all_scores = self.nb_loader.predict(
-            text, 
-            return_all_scores=True
-        )
+    def predict_with_scores(self, text: str, version: str = 'v1') -> Dict[str, Any]:
+        """Predict with all scores for each label."""
+        loader = self._get_loader(version)
+        prediction, confidence, all_scores = loader.predict(text, return_all_scores=True)
         
         return {
             'prediction': prediction,

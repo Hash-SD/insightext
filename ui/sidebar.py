@@ -1,12 +1,9 @@
-"""
-Sidebar components restored to original navigation logic but with modern styling.
-Includes Team Section as requested.
-"""
+"""Sidebar components with modern styling."""
 
 import streamlit as st
 from config.settings import settings
 
-# Model Metadata definitions
+# Model Metadata
 MODEL_METADATA = {
     'v1': {
         'name': 'NB Indonesian Sentiment',
@@ -28,28 +25,26 @@ MODEL_METADATA = {
     }
 }
 
+
 def render_sidebar(retraining_service=None) -> str:
-    """
-    Render modern sidebar with separated sections.
-    """
+    """Render modern sidebar with separated sections."""
     with st.sidebar:
-        # 1. Header & Branding
+        # Header & Branding
         st.markdown(
-            f"""
+            """
             <div style="text-align: center; margin-bottom: 30px;">
                 <div class="sidebar-logo-icon">🔎</div>
-                <h1 style="font-size: 3.5rem !important; margin: 0; font-weight: 800; letter-spacing: -2px; line-height: 1.2; color: #1E293B;">
+                <h1 style="font-size: 2.8rem !important; margin: 0; font-weight: 800; letter-spacing: -2px; line-height: 1.2; color: #1E293B;">
                     insightext
                 </h1>
-                <p style="color: #64748B; margin-top: 10px; font-size: 1.2rem !important;">
-                    Enterprise Sentiment Analysis
-                </p>
+                <span class="sidebar-subtitle">Sentiment Analysis</span>
             </div>
+            <hr style="border: none; height: 1px; background: linear-gradient(90deg, transparent, #E2E8F0, transparent); margin: 20px 0;">
             """, 
             unsafe_allow_html=True
         )
         
-        # 2. User Mode Selection
+        # User Mode Selection
         st.markdown("### 👤 User Mode")
         mode = st.radio(
             "Select Interface Mode",
@@ -62,26 +57,25 @@ def render_sidebar(retraining_service=None) -> str:
         st.session_state['user_mode'] = mode
         
         if mode == "Beginner":
-            st.caption("Mode sederhana untuk analisis cepat.")
+            st.markdown('<p class="mode-caption">Mode sederhana untuk analisis cepat.</p>', unsafe_allow_html=True)
         else:
-            st.caption("Mode detail dengan metrik performa lengkap.")
+            st.markdown('<p class="mode-caption">Mode detail dengan metrik performa lengkap.</p>', unsafe_allow_html=True)
             
         st.divider()
 
-        # 3. Main Navigation (Restored)
+        # Main Navigation
         st.markdown("### 🧭 Navigation")
         selected_page = st.radio(
             "Go to",
-            options=["🔮 Prediksi", "📊 Monitoring", "🚀 Model Management"],
+            options=["Prediksi", "Monitoring", "Model Management"],
             label_visibility="collapsed"
         )
         
         st.divider()
 
-        # 4. Configuration Section
+        # Configuration Section
         with st.expander("⚙️  Pengaturan & Model", expanded=True):
-            # Model Version
-            st.markdown("**Model Version**")
+            st.markdown('<p class="section-label"><strong>Model Version</strong></p>', unsafe_allow_html=True)
             model_options = {'v1': '🇮🇩 Indonesian', 'v2': '🇺🇸 English'}
             current_version = st.session_state.get('selected_model_version', 'v1')
             
@@ -94,13 +88,11 @@ def render_sidebar(retraining_service=None) -> str:
             )
             st.session_state['selected_model_version'] = selected_v
             
-            # Show small model info
             if mode == "Expert":
                 meta = MODEL_METADATA.get(selected_v, {})
                 st.info(f"{meta.get('model_type')}\nAcc: {meta.get('accuracy'):.1%}")
 
-            # Data Consent
-            st.markdown("**Data Privacy**")
+            st.markdown('<p class="section-label"><strong>Data Privacy</strong></p>', unsafe_allow_html=True)
             dont_save = st.checkbox(
                 "Don't save my data",
                 value=st.session_state.get('dont_save_data', False)
@@ -110,7 +102,7 @@ def render_sidebar(retraining_service=None) -> str:
 
         st.divider()
 
-        # 5. Tim Pengembang (New List)
+        # Team Section
         st.markdown("### 👥 Tim Pengembang")
         team_members = [
             "Hermawan Manurung",
@@ -120,10 +112,9 @@ def render_sidebar(retraining_service=None) -> str:
             "Presilia"
         ]
         
-        # Build HTML string first
         team_html = '<div style="background-color: #F8FAFC; padding: 15px; border-radius: 8px; border: 1px solid #E2E8F0;">'
         for member in team_members:
-             team_html += f"<div style='margin-bottom: 5px; color: #475569; font-weight: 500;'>• {member}</div>"
+            team_html += f"<div style='margin-bottom: 5px; color: #475569; font-weight: 500;'>• {member}</div>"
         team_html += '</div>'
         
         st.markdown(team_html, unsafe_allow_html=True)

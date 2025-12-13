@@ -252,9 +252,65 @@ class TestMetadataHandling:
         assert 'name' in result['metadata']
         assert 'accuracy' in result['metadata']
     
-    def test_metadata_includes_preprocessing_info(self, prediction_service):
-        """Test metadata includes preprocessing information"""
+    def test_metadata_includes_input_token_count(self, prediction_service):
+        """Test metadata includes input token count"""
         result = prediction_service.predict("Test input", "v1", False)
         
         assert 'metadata' in result
-        assert 'preprocessed_token_count' in result['metadata']
+        assert 'input_token_count' in result['metadata']
+        assert result['metadata']['input_token_count'] == 2  # "Test input" = 2 tokens
+
+
+class TestSinglePreprocessing:
+    """Test that text is only preprocessed once (inside model, not in service)"""
+    
+    def test_raw_text_passed_to_model(self, mock_db_manager, mock_model_loader):
+        """
+        Verify that PredictionService passes raw text to model_func,
+        NOT preprocessed text. Preprocessing should happen inside the model.
+        
+        This test verifies the fix for the double preprocessing bug.
+        """
+        captured_text = []
+        
+        def mock_predict_capture(text):
+            captured_text.append(text)
+            return ("positif", 0.85)
+        
+        mock_model_loader.load_model.return_value = mock_predict_capture
+        
+        service = PredictionService(mock_db_manager, mock_model_loader)
+        
+        # Input with mixed case and special chars - should NOT be preprocessed by service
+        original_text = "This is a TEST with UPPERCASE and special chars!"
+        
+        service.predict(original_text, "v1", False)
+        
+        # The text passed to model should be the ORIGINAL text, not preprocessed
+        assert len(captured_text) == 1
+        assert captured_text[0] == original_text, \
+            f"Expected raw text '{original_text}', but got '{captured_text[0]}'. " \
+            "Text should not be preprocessed by PredictionService."
+    
+    def test_no_double_preprocessing(self, mock_db_manager, mock_model_loader):
+        """
+        Ensure text is not cleaned/lowercased before being passed to model.
+        The model handles its own preprocessing internally.
+        """
+        captured_text = []
+        
+        def mock_predict_capture(text):
+            captured_text.append(text)
+            return ("negatif", 0.75)
+        
+        mock_model_loader.load_model.return_value = mock_predict_capture
+        
+        service = PredictionService(mock_db_manager, mock_model_loader)
+        
+        # Text with uppercase - if double preprocessing existed, this would be lowercased
+        test_text = "UPPERCASE TEXT HERE"
+        
+        service.predict(test_text, "v1", False)
+        
+        # Verify uppercase is preserved (not preprocessed by service)
+        assert captured_text[0] == "UPPERCASE TEXT HERE"

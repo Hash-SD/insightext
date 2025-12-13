@@ -1,11 +1,11 @@
 """
-Model Archiver untuk Naive Bayes Sentiment Analysis.
+Model Archiver for Naive Bayes Sentiment Analysis.
 
-Modul ini menyediakan fungsi untuk:
-1. Mengarsipkan model lama beserta metadata lengkap
-2. Mengelola versi model yang di-archive
-3. Menampilkan history perubahan model
-4. Restore model dari archive jika diperlukan
+Provides functionality for:
+1. Archiving old models with complete metadata
+2. Managing archived model versions
+3. Displaying model change history
+4. Restoring models from archive
 """
 
 import json
@@ -17,22 +17,13 @@ from typing import Dict, Any, Optional, List
 
 
 class ModelArchiver:
-    """
-    Model archiver untuk menyimpan dan mengelola versi model lama.
-    Setiap model yang di-archive disimpan dengan metadata lengkap.
-    """
+    """Model archiver for storing and managing old model versions."""
     
     def __init__(self, archive_base_path: str = 'models/archived'):
-        """
-        Initialize model archiver.
-        
-        Args:
-            archive_base_path: Path ke direktori archive (default: models/archived)
-        """
         self.logger = logging.getLogger(__name__)
         self.archive_base_path = Path(archive_base_path)
         self.archive_base_path.mkdir(parents=True, exist_ok=True)
-        self.logger.info(f"ModelArchiver initialized with archive path: {self.archive_base_path}")
+        self.logger.info(f"ModelArchiver initialized: {self.archive_base_path}")
     
     def archive_model(
         self,
@@ -42,28 +33,12 @@ class ModelArchiver:
         notes: Optional[str] = None
     ) -> str:
         """
-        Archive current model dengan metadata lengkap.
+        Archive current model with complete metadata.
         
-        Args:
-            version: Model version yang di-archive (e.g., 'v1', 'v2')
-            current_model_path: Path ke direktori model yang akan di-archive (e.g., 'models/saved_model')
-            metrics: Dictionary berisi metrics model (accuracy, f1_score, dll)
-            notes: Catatan manual tentang model (optional)
-            
         Returns:
-            Path ke direktori archive yang baru dibuat
-            
-        Example:
-            >>> archiver = ModelArchiver()
-            >>> archive_path = archiver.archive_model(
-            ...     version='v1',
-            ...     current_model_path='models/saved_model',
-            ...     metrics={'accuracy': 0.6972, 'f1_score': 0.6782},
-            ...     notes='Original model sebelum update dengan balanced data'
-            ... )
+            Path to the newly created archive directory
         """
         try:
-            # Create timestamped archive directory
             timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
             archive_dir = self.archive_base_path / f"{version}_{timestamp}"
             archive_dir.mkdir(parents=True, exist_ok=True)
@@ -87,89 +62,62 @@ class ModelArchiver:
                 'metrics': metrics or {}
             }
             
-            metadata_file = archive_dir / 'archive_metadata.json'
-            with open(metadata_file, 'w') as f:
+            with open(archive_dir / 'archive_metadata.json', 'w') as f:
                 json.dump(metadata, f, indent=2)
             
-            self.logger.info(f"Model v{version} archived successfully at: {archive_dir}")
+            self.logger.info(f"Model v{version} archived at: {archive_dir}")
             return str(archive_dir)
             
         except Exception as e:
-            self.logger.error(f"Error archiving model: {str(e)}", exc_info=True)
+            self.logger.error(f"Error archiving model: {e}", exc_info=True)
             raise
     
     def list_archived_models(self, version: Optional[str] = None) -> List[Dict[str, Any]]:
-        """
-        List semua archived models.
-        
-        Args:
-            version: Filter berdasarkan version (optional)
-            
-        Returns:
-            List of dictionaries berisi info setiap archived model
-            
-        Example:
-            >>> archiver = ModelArchiver()
-            >>> archives = archiver.list_archived_models(version='v1')
-            >>> for archive in archives:
-            ...     print(f"{archive['version']}: {archive['archived_at']}")
-        """
+        """List all archived models, optionally filtered by version."""
         archived_models = []
         
         try:
             for archive_dir in self.archive_base_path.iterdir():
-                if archive_dir.is_dir():
-                    metadata_file = archive_dir / 'archive_metadata.json'
-                    if metadata_file.exists():
-                        with open(metadata_file, 'r') as f:
-                            metadata = json.load(f)
-                        
-                        # Filter by version if specified
-                        if version is None or metadata.get('version') == version:
-                            metadata['path'] = str(archive_dir)
-                            archived_models.append(metadata)
+                if not archive_dir.is_dir():
+                    continue
+                    
+                metadata_file = archive_dir / 'archive_metadata.json'
+                if not metadata_file.exists():
+                    continue
+                    
+                with open(metadata_file, 'r') as f:
+                    metadata = json.load(f)
+                
+                if version is None or metadata.get('version') == version:
+                    metadata['path'] = str(archive_dir)
+                    archived_models.append(metadata)
             
             # Sort by archived_at (newest first)
-            archived_models.sort(
-                key=lambda x: x.get('archived_at', ''),
-                reverse=True
-            )
-            
+            archived_models.sort(key=lambda x: x.get('archived_at', ''), reverse=True)
             return archived_models
             
         except Exception as e:
-            self.logger.error(f"Error listing archived models: {str(e)}", exc_info=True)
+            self.logger.error(f"Error listing archived models: {e}", exc_info=True)
             return []
     
     def get_archive_info(self, archive_path: str) -> Optional[Dict[str, Any]]:
-        """
-        Get detailed info tentang specific archived model.
-        
-        Args:
-            archive_path: Path ke archived model directory
-            
-        Returns:
-            Dictionary berisi metadata, atau None jika tidak ada
-        """
+        """Get detailed info about a specific archived model."""
         try:
             archive_dir = Path(archive_path)
             metadata_file = archive_dir / 'archive_metadata.json'
             
-            if metadata_file.exists():
-                with open(metadata_file, 'r') as f:
-                    metadata = json.load(f)
-                
-                # Add file listing
-                files = [f.name for f in archive_dir.glob('*') if f.is_file()]
-                metadata['files'] = files
-                metadata['path'] = str(archive_dir)
-                
-                return metadata
+            if not metadata_file.exists():
+                return None
             
-            return None
+            with open(metadata_file, 'r') as f:
+                metadata = json.load(f)
+            
+            metadata['files'] = [f.name for f in archive_dir.glob('*') if f.is_file()]
+            metadata['path'] = str(archive_dir)
+            return metadata
             
         except Exception as e:
-            self.logger.error(f"Error getting archive info: {str(e)}", exc_info=True)
+            self.logger.error(f"Error getting archive info: {e}", exc_info=True)
             return None
     
     def restore_model(
@@ -178,29 +126,11 @@ class ModelArchiver:
         restore_to_path: str,
         backup_current: bool = True
     ) -> bool:
-        """
-        Restore model dari archive ke production.
-        
-        Args:
-            archive_path: Path ke archived model
-            restore_to_path: Path ke mana model akan di-restore (production path)
-            backup_current: Backup model saat ini sebelum restore (default: True)
-            
-        Returns:
-            True jika restore berhasil, False jika gagal
-            
-        Example:
-            >>> archiver = ModelArchiver()
-            >>> success = archiver.restore_model(
-            ...     archive_path='models/archived/v1_20231201_120000',
-            ...     restore_to_path='models/saved_model'
-            ... )
-        """
+        """Restore model from archive to production."""
         try:
             archive_dir = Path(archive_path)
             restore_dir = Path(restore_to_path)
             
-            # Verify archive exists
             if not archive_dir.exists():
                 self.logger.error(f"Archive directory not found: {archive_path}")
                 return False
@@ -226,19 +156,11 @@ class ModelArchiver:
             return True
             
         except Exception as e:
-            self.logger.error(f"Error restoring model: {str(e)}", exc_info=True)
+            self.logger.error(f"Error restoring model: {e}", exc_info=True)
             return False
     
     def delete_archive(self, archive_path: str) -> bool:
-        """
-        Delete specific archived model.
-        
-        Args:
-            archive_path: Path ke archived model yang akan dihapus
-            
-        Returns:
-            True jika delete berhasil, False jika gagal
-        """
+        """Delete specific archived model."""
         try:
             archive_dir = Path(archive_path)
             
@@ -251,7 +173,7 @@ class ModelArchiver:
             return True
             
         except Exception as e:
-            self.logger.error(f"Error deleting archive: {str(e)}", exc_info=True)
+            self.logger.error(f"Error deleting archive: {e}", exc_info=True)
             return False
     
     def get_model_comparison(
@@ -259,20 +181,9 @@ class ModelArchiver:
         current_metrics: Dict[str, Any],
         archive_path: Optional[str] = None
     ) -> Dict[str, Any]:
-        """
-        Bandingkan metrics model saat ini dengan model di-archive.
-        
-        Args:
-            current_metrics: Metrics dari model production saat ini
-            archive_path: Path ke archived model (jika None, ambil yg terbaru)
-            
-        Returns:
-            Dictionary berisi perbandingan metrics
-        """
+        """Compare current model metrics with archived model."""
         try:
-            # Get archive metrics
             if archive_path is None:
-                # Get latest archive
                 archives = self.list_archived_models()
                 if not archives:
                     return {'error': 'No archived models found'}
@@ -285,14 +196,14 @@ class ModelArchiver:
             
             archived_metrics = archive_info.get('metrics', {})
             
-            # Calculate differences
             comparison = {
                 'current': current_metrics,
                 'archived': archived_metrics,
                 'differences': {}
             }
             
-            for key in set(list(current_metrics.keys()) + list(archived_metrics.keys())):
+            all_keys = set(list(current_metrics.keys()) + list(archived_metrics.keys()))
+            for key in all_keys:
                 current_val = current_metrics.get(key)
                 archived_val = archived_metrics.get(key)
                 
@@ -309,5 +220,5 @@ class ModelArchiver:
             return comparison
             
         except Exception as e:
-            self.logger.error(f"Error comparing models: {str(e)}", exc_info=True)
+            self.logger.error(f"Error comparing models: {e}", exc_info=True)
             return {'error': str(e)}
