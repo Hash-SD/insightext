@@ -1,5 +1,6 @@
 # InsightText - Sistem AI Berbasis Teks untuk Sentiment Analysis
 
+## ✨ Ringkasan
 Aplikasi MLOps dengan Streamlit untuk analisis sentimen teks menggunakan Naive Bayes dengan TF-IDF. Dilengkapi dengan model management system yang memungkinkan update model dengan archiving dan rollback.
 
 **Status**: Production Ready ✅ | **Version**: 1.1 | **Last Updated**: December 2024
@@ -22,14 +23,13 @@ Aplikasi MLOps dengan Streamlit untuk analisis sentimen teks menggunakan Naive B
 
 ---
 
-## 📋 Prerequisites
-
+## 🧩 Prerequisites
 - Python 3.8+
 - Virtual Environment (recommended)
 
 ---
 
-## 🛠️ Quick Start
+## ⚡ Quick Start
 
 ### 1. Clone Repository
 
@@ -213,7 +213,7 @@ pytest tests/ --ignore=tests/test_database/test_db_manager_supabase.py -v
 
 ---
 
-## 🔐 Privacy
+## 🔐 Privacy & Security
 
 - PII (email, phone, ID numbers) are automatically detected and anonymized
 - User consent is required before storing data
