@@ -15,23 +15,206 @@ Sistem Klasifikasi Sentimen End-to-End yang "Hidup": Mampu memprediksi, menerima
 
 Model Machine Learning tradisional bersifat statis. Setelah di-deploy, performanya sering kali menurun seiring waktu karena perubahan tren bahasa atau konteks data (Data Drift). Proyek ini menyelesaikan masalah tersebut dengan pendekatan Closed-Loop MLOps, di mana model terus belajar dari interaksi pengguna.
 
+Baik, sekarang jelas 👍
+Kamu **SUDAH punya gambarnya**, dan kamu ingin:
+
+1. **Gambar benar-benar muncul di README**
+2. **Kode Markdown utuh**
+3. **Disertai analisis akademik / teknis dari gambar tersebut**
+4. Fokus pada **The Big Picture Architecture**
+
+Di bawah ini adalah **jawaban final siap tempel ke README.md** tanpa asumsi apa pun.
+
+---
+
 ## 🏗️ Arsitektur Sistem (The Big Picture)
 
-Bagian ini menjelaskan arsitektur sistem secara menyeluruh dalam mengintegrasikan pengguna, layanan prediksi berbasis model machine learning, serta database untuk mendukung proses inferensi, pencatatan log, dan pembaruan model secara real-time.
-<!--
-🔴 [INSTRUKSI UNTUK VISUALISASI - GAMBAR 1]
-Ganti gambar placeholder di bawah ini dengan diagram arsitektur buatan Anda.
-Gunakan tools seperti Excalidraw atau Draw.io.
-Pastikan diagram memuat:
+Gambar berikut menunjukkan arsitektur sistem Sentiment Analysis berbasis MLOps yang dirancang sebagai **end-to-end continuous learning system**, mulai dari interaksi pengguna hingga penyimpanan log dan pembaruan model.
 
-User
-docs/The Big Picture Architecture1.jpg
-Streamlit App (Frontend)
+### 📌 The Big Picture Architecture
 
-Prediction Service (Backend)
+<img src="docs/The Big Picture Architecture1.jpg" alt="Monitoring Dashboard Screenshot 2" width="600">
+<img src="The Big Picture Architecture2.jpg" alt="Monitoring Dashboard Screenshot 2" width="600">
 
-Supabase (Database & Logs)
--->
+### 🔍 Analisis Arsitektur Sistem
+
+Arsitektur ini terdiri dari tiga lapisan utama yang saling terintegrasi secara real-time:
+
+#### 1️⃣ Client Layer – Streamlit App (Frontend)
+
+* **Peran utama:** Media interaksi pengguna
+* Pengguna memasukkan teks ulasan melalui antarmuka Streamlit.
+* Streamlit bertindak sebagai client yang mengirimkan request ke backend.
+* Selain menampilkan hasil prediksi, frontend juga menyediakan mekanisme **feedback (Benar / Salah)** sebagai bagian dari human-in-the-loop.
+
+**Nilai MLOps:**
+Frontend tidak hanya untuk inferensi, tetapi juga berfungsi sebagai sumber data pelatihan berkelanjutan.
+
+---
+
+#### 2️⃣ Server Layer – Prediction Service (Backend)
+
+* **Peran utama:** Core inference engine
+* Backend memuat model machine learning dalam format `.pkl`.
+* Model melakukan klasifikasi sentimen berdasarkan input pengguna.
+* Hasil prediksi dikirim kembali ke frontend.
+* Semua aktivitas inferensi dicatat sebagai log.
+
+**Nilai MLOps:**
+Backend dirancang stateless terhadap UI namun stateful terhadap model, sehingga model dapat diganti tanpa mengubah frontend.
+
+---
+
+#### 3️⃣ Storage Layer – Supabase (Database & Logs)
+
+* **Peran utama:** Single source of truth
+* Menyimpan:
+
+  * Log prediksi
+  * Feedback pengguna
+  * Metadata model
+* Database ini menjadi dasar untuk monitoring performa dan retraining.
+
+**Nilai MLOps:**
+Supabase berfungsi sebagai jembatan antara inference dan learning, memungkinkan closed-loop learning.
+
+
+### 🔁 Feedback Loop (Human-in-the-Loop)
+<img src="docs/Feedback Loop.jpg" alt="Monitoring Dashboard Screenshot 2" width="600">
+
+Alur feedback membentuk siklus pembelajaran berkelanjutan:
+
+1. Model melakukan prediksi
+2. Pengguna mengevaluasi hasil
+3. Feedback disimpan di database
+4. Data baru digunakan untuk evaluasi performa
+5. Model dilatih ulang jika diperlukan
+
+Hal ini memastikan sistem **adaptif terhadap data drift dan perubahan bahasa pengguna**.
+
+
+
+## 🔁 Model Evolution (Continuous Learning Lifecycle)
+
+Bagian ini menjelaskan bagaimana model machine learning dalam sistem Sentiment Analysis **berevolusi dari waktu ke waktu** melalui mekanisme feedback pengguna, monitoring performa, dan retraining otomatis. Konsep ini merupakan inti dari pendekatan **MLOps berbasis continuous learning**.
+
+### 📌 Diagram Model Evolution
+
+
+<img src="docs/model evolution.jpg" alt="Monitoring Dashboard Screenshot 2" width="600">
+## 🔍 Analisis Model Evolution
+
+Model Evolution menggambarkan bahwa model **tidak bersifat statis**, melainkan terus diperbarui untuk menjaga performa seiring perubahan data dan konteks bahasa.
+
+
+
+### 1️⃣ Prediction Service (Inferensi Model)
+
+Siklus dimulai ketika **Prediction Service** menggunakan model aktif untuk melakukan inferensi terhadap input pengguna.
+
+* Model menghasilkan prediksi sentimen
+* Hasil prediksi dikirim ke frontend
+* Semua prediksi dicatat ke database
+
+Tahap ini merepresentasikan **model versi aktif** (misalnya Model v1).
+
+
+### 2️⃣ Supabase Database (Data & Feedback)
+
+Semua data hasil inferensi disimpan di **Supabase Database**, termasuk:
+
+* Input teks pengguna
+* Label prediksi model
+* Feedback pengguna (benar / salah)
+* Waktu dan metadata model
+
+Database ini berfungsi sebagai **sumber data dinamis** untuk evaluasi performa dan pelatihan ulang.
+
+---
+
+### 3️⃣ Feedback (Human-in-the-Loop)
+
+Feedback dari pengguna menjadi komponen kunci dalam evolusi model.
+
+* Jika prediksi salah, user memberikan label yang benar
+* Feedback disimpan sebagai data terverifikasi
+* Data ini meningkatkan kualitas dataset pelatihan
+
+**Nilai MLOps:**
+Human-in-the-loop membantu mengurangi error sistematis dan bias model.
+
+
+
+### 4️⃣ Monitoring Performance
+
+Monitoring Service secara berkala mengevaluasi performa model menggunakan data terbaru.
+
+Indikator yang dimonitor antara lain:
+
+* Akurasi prediksi
+* Rasio feedback salah
+* Volume data baru
+* Tren penurunan performa (data drift)
+
+Tahap ini menentukan apakah model masih layak digunakan atau perlu diperbarui.
+
+
+### 5️⃣ Trigger Retraining
+
+Retraining dipicu oleh dua kondisi utama:
+
+* **Penurunan akurasi** di bawah ambang batas tertentu
+* **Jadwal retraining berkala** (misalnya mingguan)
+
+Trigger ini mencegah retraining berlebihan sekaligus memastikan model tetap relevan.
+
+
+### 6️⃣ Train New Model
+
+Pada tahap ini:
+
+* Data lama digabung dengan data feedback terbaru
+* Model dilatih ulang menggunakan pipeline yang sama
+* Model baru dihasilkan (misalnya Model v2)
+
+Proses ini memastikan **reproducibility dan konsistensi eksperimen**.
+
+
+
+### 7️⃣ Updated Model (Model Baru)
+
+Model hasil retraining:
+
+* Disimpan sebagai model versi terbaru
+* Menggantikan model lama
+* Digunakan kembali oleh Prediction Service
+
+Siklus kemudian kembali ke tahap inferensi dan terus berulang.
+
+
+## 🧠 Makna Model Evolution dalam MLOps
+
+Model Evolution memastikan bahwa sistem:
+
+* Adaptif terhadap **data drift**
+* Tidak mengalami **model decay**
+* Terus meningkat kualitasnya dari waktu ke waktu
+* Siap digunakan dalam skenario produksi nyata
+
+Pendekatan ini membedakan sistem MLOps modern dari pipeline machine learning tradisional yang statis.
+
+
+
+
+
+
+
+
+
+
+
+
+  
 
 **Komponen Utama:**
 
