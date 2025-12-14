@@ -106,10 +106,10 @@ def render_sidebar(retraining_service=None) -> str:
         st.markdown("### 👥 Tim Pengembang")
         team_members = [
             "Hermawan Manurung",
-            "Pardi Octaviando",
             "Najla Juwairia",
             "Dea Mutia Risani",
-            "Presilia"
+            "Presilia",
+            "Pardi Octaviando"
         ]
         
         team_html = '<div style="background-color: #F8FAFC; padding: 15px; border-radius: 8px; border: 1px solid #E2E8F0;">'
