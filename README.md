@@ -63,7 +63,7 @@ Antarmuka pengguna dirancang untuk mempermudah validasi hasil model.
 
 <img src="docs/home.jpg" alt="Homepage Screenshot" width="600">
 
-Halaman utama menampilkan antarmuka analisis sentimen yang sederhana dan intuitif. Pengguna dapat memasukkan teks ulasan (minimal 7 kata), kemudian sistem akan menampilkan hasil prediksi sentimen (Positif/Negatif/Netral) beserta tingkat confidence. Aplikasi juga menyediakan tombol contoh teks untuk demonstrasi cepat dan menampilkan riwayat prediksi terakhir untuk referensi.
+Halaman utama menampilkan antarmuka analisis sentimen yang sederhana dan intuitif. Pengguna dapat memasukkan teks ulasan (minimal 7 kata), kemudian sistem akan menampilkan hasil prediksi sentimen (Positif/NegatifNetral) beserta tingkat confidence. Aplikasi juga menyediakan tombol contoh teks untuk demonstrasi cepat dan menampilkan riwayat prediksi terakhir untuk referensi.
 
 <!--
 🔴 [INSTRUKSI UNTUK VISUALISASI - GAMBAR 2]
@@ -75,11 +75,17 @@ Pastikan terlihat: Input teks, Hasil Prediksi, dan Tombol Feedback "Benar/Salah"
 
 Admin dapat memantau kesehatan model secara transparan melalui grafik real-time.
 
-<!--
-🔴 [INSTRUKSI UNTUK VISUALISASI - GAMBAR 3]
-Masukkan Screenshot Halaman Monitoring di sini.
-Pastikan terlihat: Grafik Akurasi (Line Chart) dan Log Prediksi Terbaru.
--->
+<img src="docs/monitoring-1.jpg" alt="Monitoring Dashboard Screenshot 1" width="600">
+
+Dashboard monitoring menampilkan metrik utama seperti Total Prediksi, Rata-rata Latency, dan Drift Score Global. Sistem juga menampilkan deteksi data drift yang membantu mengidentifikasi kapan model perlu di-retrain berdasarkan perubahan distribusi data.
+
+<img src="docs/monitoring-2.jpg" alt="Monitoring Dashboard Screenshot 2" width="600">
+
+Halaman monitoring juga menampilkan tabel evaluasi model yang membandingkan akurasi dan F1 Score antar versi model, serta grafik frekuensi prediksi per versi model untuk analisis penggunaan.
+
+<img src="docs/monitoring-3.jpg" alt="Monitoring Dashboard Latency Distribution Screenshot" width="600">
+
+Dashboard juga menyediakan visualisasi distribusi latency melalui histogram yang menampilkan sebaran waktu respons prediksi. Grafik ini dilengkapi dengan threshold untuk mengidentifikasi prediksi yang melebihi batas waktu yang ditentukan, serta statistik lengkap seperti nilai minimum, rata-rata, maksimum, dan jumlah prediksi di atas threshold.
 
 ## 🛠️ Teknologi (Tech Stack)
 
