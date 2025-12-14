@@ -95,10 +95,11 @@ graph TD
 
 **Penjelasan Alur:**
 
-- Inference: Model melayani permintaan prediksi dari pengguna.
-- Feedback Collection: Jika prediksi salah, pengguna memberikan koreksi yang langsung disimpan ke database.
-- Monitoring: Sistem secara berkala mengecek performa model berdasarkan data feedback terbaru.
-- Retraining: Jika akurasi turun di bawah ambang batas atau data baru sudah cukup banyak, retraining_service.py akan dijalankan untuk menghasilkan model baru yang lebih pintar.
+- Input dan Validasi: Pengguna memasukkan teks ulasan, kemudian sistem melakukan validasi awal untuk memastikan input sesuai kriteria sebelum diproses lebih lanjut.
+- Inference dan Confidence: Setelah validasi berhasil, model aktif dimuat dan melakukan preprocessing serta inferensi untuk menghasilkan prediksi sentimen beserta nilai confidence.
+- Consent dan Logging Data: Sistem meminta persetujuan pengguna sebelum menyimpan data. Jika disetujui, data dianonimkan lalu disimpan ke database sebagai riwayat prediksi.
+- Monitoring Performa: Data historis digunakan oleh sistem monitoring untuk mengevaluasi performa model secara berkala dan mendeteksi potensi data drift.
+- Retraining dan Update Model: Apabila terdeteksi penurunan performa atau drift melewati ambang batas, sistem memicu proses retraining, mengevaluasi model baru, mengarsipkan model lama, dan mendistribusikan model terbaru ke layanan prediksi.
 
 ## 📸 Fitur & Demo Aplikasi
 
