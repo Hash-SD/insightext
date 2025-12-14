@@ -61,6 +61,10 @@ graph TD
 
 Antarmuka pengguna dirancang untuk mempermudah validasi hasil model.
 
+<img src="docs/home.png" alt="Homepage Screenshot" width="600">
+
+Halaman utama menampilkan antarmuka analisis sentimen yang sederhana dan intuitif. Pengguna dapat memasukkan teks ulasan (minimal 7 kata), kemudian sistem akan menampilkan hasil prediksi sentimen (Positif/Negatif/Netral) beserta tingkat confidence. Aplikasi juga menyediakan tombol contoh teks untuk demonstrasi cepat dan menampilkan riwayat prediksi terakhir untuk referensi.
+
 <!--
 🔴 [INSTRUKSI UNTUK VISUALISASI - GAMBAR 2]
 Masukkan Screenshot Halaman Utama (Main Area) di sini.
