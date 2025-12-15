@@ -11,6 +11,15 @@
 
 Sistem Klasifikasi Sentimen End-to-End yang "Hidup": Mampu memprediksi, menerima umpan balik pengguna, memantau performa, dan melakukan pelatihan ulang (Retraining) secara mandiri.
 
+## 🧑‍🔬Tim Peneliti (Kelompok 6)
+
+Proyek ini disusun oleh mahasiswa Program Studi Sains Data ITERA:
+* **Hermawan Manurung** (122450069)
+* **Pardi Oktaviando** (122450132)
+* **Najla Juwairia** (122450037)
+* **Dea Mutia Risani** (122450099)
+* **Presilia** (122450081)
+
 ## 📖 Latar Belakang Masalah
 
 Model Machine Learning tradisional bersifat statis. Setelah di-deploy, performanya sering kali menurun seiring waktu karena perubahan tren bahasa atau konteks data (Data Drift). Proyek ini menyelesaikan masalah tersebut dengan pendekatan Closed-Loop MLOps, di mana model terus belajar dari interaksi pengguna.
