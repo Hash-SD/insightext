@@ -151,6 +151,13 @@ def render_result_section(prediction_result: Dict[str, Any], db_manager=None):
         unsafe_allow_html=True
     )
     
+    # Show database warning if exists
+    metadata = prediction_result.get('metadata', {})
+    if metadata.get('database_warning'):
+        st.warning(f"⚠️ {metadata['database_warning']} - Feedback tidak tersedia untuk prediksi ini.")
+    elif metadata.get('database_info'):
+        st.info(f"ℹ️ {metadata['database_info']}")
+    
     # Feedback Section - Only show if user consent is given and prediction was saved
     if prediction_id and st.session_state.get('user_consent', True):
         render_feedback_section(prediction_id, db_manager)
@@ -166,15 +173,29 @@ def render_feedback_section(prediction_id: int, db_manager=None):
     feedback_key = f"feedback_{prediction_id}"
     
     # Check if feedback already given
-    if st.session_state.get(feedback_key):
-        st.markdown(
-            """
-            <div style="background: #F0FDF4; border: 1px solid #BBF7D0; border-radius: 8px; padding: 12px; margin-top: 10px; text-align: center;">
-                <span style="color: #166534;">✓ Terima kasih atas feedback Anda!</span>
-            </div>
-            """,
-            unsafe_allow_html=True
-        )
+    feedback_value = st.session_state.get(feedback_key)
+    if feedback_value:
+        # Tampilkan hasil feedback dengan jelas
+        if feedback_value == 'correct':
+            st.markdown(
+                """
+                <div style="background: #F0FDF4; border: 1px solid #BBF7D0; border-radius: 8px; padding: 12px; margin-top: 10px; text-align: center;">
+                    <span style="color: #166534; font-weight: 600;">✅ Feedback: BENAR</span>
+                    <p style="color: #166534; font-size: 0.85rem; margin: 5px 0 0 0;">Terima kasih! Prediksi dinilai akurat.</p>
+                </div>
+                """,
+                unsafe_allow_html=True
+            )
+        else:  # feedback_value == 'wrong'
+            st.markdown(
+                """
+                <div style="background: #FEF2F2; border: 1px solid #FECACA; border-radius: 8px; padding: 12px; margin-top: 10px; text-align: center;">
+                    <span style="color: #DC2626; font-weight: 600;">❌ Feedback: SALAH</span>
+                    <p style="color: #DC2626; font-size: 0.85rem; margin: 5px 0 0 0;">Terima kasih! Data akan digunakan untuk perbaikan model.</p>
+                </div>
+                """,
+                unsafe_allow_html=True
+            )
         return
     
     st.markdown(
@@ -192,14 +213,20 @@ def render_feedback_section(prediction_id: int, db_manager=None):
     
     with col1:
         if st.button("✅ Benar", key=f"fb_correct_{prediction_id}", use_container_width=True):
+            success = False
             if db_manager and hasattr(db_manager, 'update_prediction_feedback'):
-                db_manager.update_prediction_feedback(prediction_id, True)
+                success = db_manager.update_prediction_feedback(prediction_id, True)
             st.session_state[feedback_key] = 'correct'
+            if not success:
+                st.session_state[f"feedback_db_error_{prediction_id}"] = True
             st.rerun()
     
     with col2:
         if st.button("❌ Salah", key=f"fb_wrong_{prediction_id}", use_container_width=True):
+            success = False
             if db_manager and hasattr(db_manager, 'update_prediction_feedback'):
-                db_manager.update_prediction_feedback(prediction_id, False)
+                success = db_manager.update_prediction_feedback(prediction_id, False)
             st.session_state[feedback_key] = 'wrong'
+            if not success:
+                st.session_state[f"feedback_db_error_{prediction_id}"] = True
             st.rerun()

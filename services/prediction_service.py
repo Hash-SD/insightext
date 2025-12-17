@@ -118,6 +118,11 @@ class PredictionService:
             int: prediction_id if successful, None otherwise
         """
         try:
+            # Ensure database connection is active
+            if not self.db_manager.connection:
+                self.logger.info("Reconnecting to database...")
+                self.db_manager.connect()
+            
             # Check for PII and anonymize if needed
             processed_text, has_pii = anonymize_pii(text)
             text_to_save = processed_text if has_pii else text
@@ -128,6 +133,10 @@ class PredictionService:
             # Insert user input
             input_id = self.db_manager.insert_user_input(text=text_to_save, consent=consent)
             
+            if not input_id:
+                self.logger.error("Failed to insert user input - no input_id returned")
+                return None
+            
             # Insert prediction
             prediction_id = self.db_manager.insert_prediction(
                 input_id=input_id,
@@ -137,9 +146,18 @@ class PredictionService:
                 latency=latency
             )
             
+            if not prediction_id:
+                self.logger.error("Failed to insert prediction - no prediction_id returned")
+                return None
+            
             self.logger.info(f"Prediction logged: input_id={input_id}, prediction_id={prediction_id}, anonymized={has_pii}")
             return prediction_id
             
         except Exception as e:
             self.logger.error(f"Failed to log prediction: {e}", exc_info=True)
+            # Try to reconnect for next attempt
+            try:
+                self.db_manager.connect()
+            except Exception:
+                pass
             return None
