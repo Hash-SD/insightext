@@ -180,8 +180,7 @@ def render_feedback_section(prediction_id: int, db_manager=None):
             st.markdown(
                 """
                 <div style="background: #F0FDF4; border: 1px solid #BBF7D0; border-radius: 8px; padding: 12px; margin-top: 10px; text-align: center;">
-                    <span style="color: #166534; font-weight: 600;">✅ Feedback: BENAR</span>
-                    <p style="color: #166534; font-size: 0.85rem; margin: 5px 0 0 0;">Terima kasih! Prediksi dinilai akurat.</p>
+                    <p style="color: #166534; font-size: 0.9rem; margin: 0;">✅ Terima kasih! Feedback telah disimpan.</p>
                 </div>
                 """,
                 unsafe_allow_html=True
@@ -190,8 +189,7 @@ def render_feedback_section(prediction_id: int, db_manager=None):
             st.markdown(
                 """
                 <div style="background: #FEF2F2; border: 1px solid #FECACA; border-radius: 8px; padding: 12px; margin-top: 10px; text-align: center;">
-                    <span style="color: #DC2626; font-weight: 600;">❌ Feedback: SALAH</span>
-                    <p style="color: #DC2626; font-size: 0.85rem; margin: 5px 0 0 0;">Terima kasih! Data akan digunakan untuk perbaikan model.</p>
+                    <p style="color: #DC2626; font-size: 0.9rem; margin: 0;">❌ Terima kasih! Feedback telah disimpan.</p>
                 </div>
                 """,
                 unsafe_allow_html=True
